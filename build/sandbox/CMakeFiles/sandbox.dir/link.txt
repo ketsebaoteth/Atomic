@@ -1,0 +1,1 @@
+/usr/bin/c++ -pthread -Wl,--dependency-file=CMakeFiles/sandbox.dir/link.d CMakeFiles/sandbox.dir/main.cpp.o -o sandbox  ../atomic_lib/libatomic_lib.a ../_deps/sdl3-build/libSDL3.a -lm /usr/lib/libvulkan.so ../_deps/freetype-build/libfreetype.a /usr/lib/libz.so /usr/lib/libbrotlidec.so /usr/lib/libvulkan.so -lgcc_s_asneeded -lgcc_s_asneeded

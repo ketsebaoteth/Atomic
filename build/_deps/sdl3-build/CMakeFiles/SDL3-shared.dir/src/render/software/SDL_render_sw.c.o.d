@@ -1,0 +1,27 @@
+_deps/sdl3-build/CMakeFiles/SDL3-shared.dir/src/render/software/SDL_render_sw.c.o: \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_render_sw.c \
+ /usr/include/stdc-predef.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/SDL_internal.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../SDL_sysrender.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../../video/SDL_surface_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../../video/SDL_blit.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../SDL_yuv_sw_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_render_sw_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_draw.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../../video/SDL_surface_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_blendfillrect.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_blendline.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_blendpoint.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_drawline.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_drawpoint.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/SDL_triangle.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../../video/SDL_pixels_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../../video/SDL_rotate.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../../video/SDL_sysvideo.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_vulkan.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_stdinc.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_error.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_video.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_begin_code.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_close_code.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/software/../../video/SDL_surface_c.h

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libatomic_lib.a CMakeFiles/atomic_lib.dir/src/renderer/vulkan/vulkan_draw.cpp.o CMakeFiles/atomic_lib.dir/src/renderer/vulkan/vulkan_renderer.cpp.o CMakeFiles/atomic_lib.dir/src/renderer/vulkan/vulkan_shader.cpp.o CMakeFiles/atomic_lib.dir/src/windowing/linux/window_sdl.cpp.o
+/usr/bin/ranlib libatomic_lib.a

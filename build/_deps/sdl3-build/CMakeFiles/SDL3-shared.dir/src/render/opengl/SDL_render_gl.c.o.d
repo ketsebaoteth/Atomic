@@ -1,0 +1,23 @@
+_deps/sdl3-build/CMakeFiles/SDL3-shared.dir/src/render/opengl/SDL_render_gl.c.o: \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/SDL_render_gl.c \
+ /usr/include/stdc-predef.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/SDL_internal.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/../../video/SDL_sysvideo.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_vulkan.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_stdinc.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_error.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_video.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_begin_code.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_close_code.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/../../video/SDL_surface_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/../../video/SDL_blit.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_opengl.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_platform.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/include/SDL3/SDL_opengl_glext.h \
+ /usr/lib/gcc/x86_64-pc-linux-gnu/16.1.1/include/stdint.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/../SDL_sysrender.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/../../video/SDL_surface_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/../SDL_yuv_sw_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/SDL_shaders_gl.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/../../video/SDL_pixels_c.h \
+ /home/k/Documents/atomic/build/_deps/sdl3-src/src/render/opengl/SDL_glfuncs.h

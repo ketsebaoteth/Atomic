@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/k/Documents/atomic/build/_deps/freetype-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/k/Documents/atomic/build/cmake_install.cmake",
+		"/home/k/Documents/atomic/build/_deps/sdl3-build/cmake_install.cmake",
+		"/home/k/Documents/atomic/build/_deps/freetype-build/cmake_install.cmake",
+		"/home/k/Documents/atomic/build/atomic_lib/cmake_install.cmake",
+		"/home/k/Documents/atomic/build/sandbox/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

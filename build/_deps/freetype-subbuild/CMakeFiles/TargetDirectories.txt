@@ -1,0 +1,3 @@
+/home/k/Documents/atomic/build/_deps/freetype-subbuild/CMakeFiles/freetype-populate.dir
+/home/k/Documents/atomic/build/_deps/freetype-subbuild/CMakeFiles/edit_cache.dir
+/home/k/Documents/atomic/build/_deps/freetype-subbuild/CMakeFiles/rebuild_cache.dir

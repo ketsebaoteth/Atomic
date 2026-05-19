@@ -1,42 +1,40 @@
-# atomic UI
+# atomic
 
-A high-performance, single-pass, hardware-accelerated vector graphics and text rendering canvas built from scratch on Vulkan. No massive bloatware dependencies, no electron-style RAM hogging—just pure, raw pixel layout speed running straight on the GPU.
+A single-pass, hardware-accelerated vector and typography canvas built from scratch on Vulkan. No web-tech bloat, no massive external dependencies—just raw pixel layout speed running straight on the GPU.
 
-It is currently in its "move fast, break things, and occasionally stare at a blank validation layer screen" early development phase. 
+Right now, it is in its early "move fast, break things, and stare at blank validation screens" phase. 
 
-===============================================================================
-The Core Blueprint
-===============================================================================
+-------------------------------------------------------------------------------
+  The Blueprint
+-------------------------------------------------------------------------------
 
-Unlike traditional UI toolkits that choke processing cycles by layering separate passes for panels, borders, and text strings, atomic flattens the entire layout into a single, unified instance stream. 
+Most UI toolkits slow down because they separate panels, borders, and text into different passes. Atomic smashes all of that into a single, unified instance stream.
 
-[ Your UI Code ] ---> UIInstance Queue ---> Single Vulkan Draw Call ---> GPU Canvas
+  [ Your UI Code ] ---> UIInstance Queue ---> Single Draw Call ---> GPU Canvas
 
-Every rectangle, rounded panel, perfect circle, and glyph from the text packing engine maps directly to an irreducible, atomic layout structure. This dispatches to a custom fragment shader that evaluates math strokes, dimensions, and curves instantly.
+Every rectangle, rounded panel, circle, and text glyph maps directly to an irreducible atomic unit, letting a single custom fragment shader evaluate shapes, borders, and mathematical curves instantly.
 
-===============================================================================
-Current Arsenal
-===============================================================================
+-------------------------------------------------------------------------------
+  What Works Right Now
+-------------------------------------------------------------------------------
 
-* [!] Unified Instance Batching: Draws geometric shapes and raw typography in a single execution pipeline pass.
-* [!] Adaptive Vector Primitive Engine: Independent math control over custom radii corners, border stroke positions, and dynamic dotted/dashed outlines.
-* [!] Dynamic Type Processing: Built-in FreeType integration caching raw character metrics and packing layouts seamlessly on the fly into a single-channel GPU atlas map.
-* [!] Zero-Bleed Memory Guard: Fully isolated data packing to guarantee shape styles never contaminate adjacent canvas resources.
+* Unified Batching: Primitive shapes and raw text layout execute in a single pass.
+* Vector Control: Independent control over individual corner radii, stroke positions, and custom dashed lines.
+* Live Type Processing: FreeType backend that bakes glyph metrics and packs them on the fly into a single-channel GPU atlas.
+* Zero-Bleed State: Strict data packing ensures your panels never accidentally inherit font styles or garbage stack memory.
 
-===============================================================================
-The Battle Plan
-===============================================================================
+-------------------------------------------------------------------------------
+  The Roadmap
+-------------------------------------------------------------------------------
 
-The foundation is rock-solid, which means the upcoming roadmap expands directly into full vector suite capabilities:
+[-] Linear & Radial Gradients: Multi-stop color interpolation calculated directly in the shader.
+[-] Image Fills & Textures: Global descriptor array indexing to map images into any primitive shape.
+[-] Block Text Gradients: Spanning fluid color blends smoothly across entire words instead of single character boxes.
+[-] Custom Polygons: Moving past hardcoded quad generation to support arbitrary vector paths and graphs.
+[-] SVG Integration: Lightweight parsing pipelines to drop vector files directly into the live layout.
 
-[-] Linear & Radial Gradients: Multi-point color math interpolation mapping directly across primitive coordinates.
-[-] Dynamic Image Samplers: Global descriptor array indexing to dynamically map photographs and asset textures into any shape layout.
-[-] Paragraph Text Gradients: Spanning fluid color blending smoothly across complete text blocks instead of isolated character boxes.
-[-] Arbitrary Polygons: Shifting custom structural nodes out of hardcoded quad generations to support custom charts and vector paths.
-[-] SVG Support: Seamless parsing pipelines to translate vector assets straight into live rendering space.
+-------------------------------------------------------------------------------
+  Contributing & Chaos
+-------------------------------------------------------------------------------
 
-===============================================================================
-Contributing & Chaos
-===============================================================================
-
-Since the library is in its early stages, breaking changes are the default state of affairs here. If you are comfortable debugging layout matrices, dealing with Vulkan synchronization pipelines, or writing clean graphics abstractions that challenge conventional UI architecture frameworks, feel free to dive in.
+Breaking changes are the default state of affairs here. If you are down to fight with Vulkan synchronization barriers, optimize memory layouts, and build a UI engine from the metal up, pull requests are welcome.

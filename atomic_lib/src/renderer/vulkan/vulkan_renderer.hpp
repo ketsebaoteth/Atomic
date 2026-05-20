@@ -52,6 +52,13 @@ public:
   void set_asset_loader(ui::asset::AssetLoader *loader) {
     m_asset_loader = loader;
   }
+  // -- drawing code --
+  void add_rect(float x, float y, float w, float h, ui::styleConfig *style);
+  void add_circle(float x, float y, float radius, ui::styleConfig *style);
+  void add_text(float x, float y, const std::string &text,
+                ui::styleConfig *style);
+  void add_image(float x, float y, float w, float h, const std::string &path,
+                 ui::styleConfig *style = nullptr);
 
 private:
   void init_vulkan();
@@ -73,14 +80,6 @@ private:
 
   uint32_t findMemoryType(uint32_t typeFilter,
                           VkMemoryPropertyFlags properties);
-
-  // -- drawing code --
-  void add_rect(float x, float y, float w, float h, ui::styleConfig *style);
-  void add_circle(float x, float y, float radius, ui::styleConfig *style);
-  void add_text(float x, float y, const std::string &text,
-                ui::styleConfig *style);
-  void add_image(float x, float y, float w, float h, const std::string &path,
-                 ui::styleConfig *style = nullptr);
 
   // Font Atlas Resources
   VkImage m_fontAtlasImage = VK_NULL_HANDLE;

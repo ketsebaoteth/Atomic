@@ -8,6 +8,7 @@
 #include <SDL3/SDL_video.h>
 #include <SDL3/SDL_vulkan.h>
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
@@ -496,7 +497,7 @@ void VulkanRenderer::begin_frame() {
                        12.0f}; // Rounded borders match up perfectly
   imageStyle.shape = ShapeType::Image;
 
-  add_image(100.0f, 150.0f, 300.0f, 200.0f, "test.jpg", &imageStyle);
+  add_image(100.0f, 200.0f, 1500.0f, 900.0f, "gta.jpg", &imageStyle);
 
   if (m_default_font) {
     ui::styleConfig textStyle{};
@@ -1166,6 +1167,9 @@ uint32_t VulkanRenderer::get_or_create_texture(const std::string &path) {
   VkDeviceSize imageSize =
       image_data->width * image_data->height * 4; // 4 channels (RGBA)
 
+  uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(
+                           std::max(image_data->width, image_data->height)))) +
+                       1;
   VkBuffer stagingBuffer;
   VkDeviceMemory stagingBufferMemory;
 
@@ -1213,13 +1217,14 @@ uint32_t VulkanRenderer::get_or_create_texture(const std::string &path) {
   imageInfo.extent.width = image_data->width;
   imageInfo.extent.height = image_data->height;
   imageInfo.extent.depth = 1;
-  imageInfo.mipLevels = 1;
+  imageInfo.mipLevels = mipLevels;
   imageInfo.arrayLayers = 1;
-  imageInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+  imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
   imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
   imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  imageInfo.usage =
-      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+  imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                    VK_IMAGE_USAGE_SAMPLED_BIT |
+                    VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
   imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
   imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
 
@@ -1241,8 +1246,6 @@ uint32_t VulkanRenderer::get_or_create_texture(const std::string &path) {
 
   vkBindImageMemory(m_device, newImage, newMemory, 0);
 
-  // Allocate a transient command buffer from your existing pool for transfer
-  // operations
   VkCommandBufferAllocateInfo cmdAllocInfo{};
   cmdAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
@@ -1259,16 +1262,16 @@ uint32_t VulkanRenderer::get_or_create_texture(const std::string &path) {
 
   VkImageMemoryBarrier barrier{};
   barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-  barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-  barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  barrier.image = newImage;
   barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
   barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-  barrier.image = newImage;
   barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-  barrier.subresourceRange.baseMipLevel = 0;
-  barrier.subresourceRange.levelCount = 1;
   barrier.subresourceRange.baseArrayLayer = 0;
   barrier.subresourceRange.layerCount = 1;
+  barrier.subresourceRange.levelCount = 1; // Transitioning level by level
+
+  barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
   barrier.srcAccessMask = 0;
   barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
@@ -1276,6 +1279,7 @@ uint32_t VulkanRenderer::get_or_create_texture(const std::string &path) {
                        VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
                        nullptr, 1, &barrier);
 
+  // 2. Copy the uncompressed staging buffer contents directly into Mip Level 0
   VkBufferImageCopy region{};
   region.bufferOffset = 0;
   region.bufferRowLength = 0;
@@ -1290,6 +1294,71 @@ uint32_t VulkanRenderer::get_or_create_texture(const std::string &path) {
   vkCmdCopyBufferToImage(tempCmdBuffer, stagingBuffer, newImage,
                          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
+  // 3. Downsample level by level using vkCmdBlitImage
+  int32_t mipWidth = image_data->width;
+  int32_t mipHeight = image_data->height;
+
+  for (uint32_t i = 1; i < mipLevels; i++) {
+    // Transition previous level (i - 1) to TRANSFER_SRC so we can read from it
+    barrier.subresourceRange.baseMipLevel = i - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    vkCmdPipelineBarrier(tempCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                         nullptr, 1, &barrier);
+
+    // Setup blit coordinates (downscaling by half each step)
+    VkImageBlit blit{};
+    blit.srcOffsets[0] = {0, 0, 0};
+    blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
+    blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.srcSubresource.mipLevel = i - 1;
+    blit.srcSubresource.layerCount = 1;
+
+    blit.dstOffsets[0] = {0, 0, 0};
+    blit.dstOffsets[1] = {mipWidth > 1 ? mipWidth / 2 : 1,
+                          mipHeight > 1 ? mipHeight / 2 : 1, 1};
+    blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    blit.dstSubresource.mipLevel = i;
+    blit.dstSubresource.layerCount = 1;
+
+    // Transition current destination level (i) from Undefined to TRANSFER_DST
+    barrier.subresourceRange.baseMipLevel = i;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+    vkCmdPipelineBarrier(tempCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
+                         nullptr, 1, &barrier);
+
+    // Execute the linear blit on the GPU graphics queue
+    vkCmdBlitImage(
+        tempCmdBuffer, newImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, newImage,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+
+    barrier.subresourceRange.baseMipLevel = i - 1;
+    barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(tempCmdBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr,
+                         0, nullptr, 1, &barrier);
+
+    if (mipWidth > 1)
+      mipWidth /= 2;
+    if (mipHeight > 1)
+      mipHeight /= 2;
+  }
+
+  // Finally, transition the very last remaining mip level to SHADER_READ_ONLY
+  barrier.subresourceRange.baseMipLevel = mipLevels - 1;
   barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
   barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
   barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -1312,15 +1381,17 @@ uint32_t VulkanRenderer::get_or_create_texture(const std::string &path) {
   vkFreeCommandBuffers(m_device, m_commandPool, 1, &tempCmdBuffer);
   vkDestroyBuffer(m_device, stagingBuffer, nullptr);
   vkFreeMemory(m_device, stagingBufferMemory, nullptr);
-
+  // =================================================================
+  // REPLACE UNTIL HERE
+  // =================================================================
   VkImageViewCreateInfo viewInfo{};
   viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   viewInfo.image = newImage;
   viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-  viewInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+  viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
   viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
   viewInfo.subresourceRange.baseMipLevel = 0;
-  viewInfo.subresourceRange.levelCount = 1;
+  viewInfo.subresourceRange.levelCount = mipLevels;
   viewInfo.subresourceRange.baseArrayLayer = 0;
   viewInfo.subresourceRange.layerCount = 1;
 

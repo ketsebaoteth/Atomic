@@ -46,7 +46,7 @@ void main(){
   if(inShapeType == SHAPE_IMAGE){
     vec2 texCoord = mix(inUVMin, inUVMax, inUV);
     vec4 texColor = texture(uiTexture[inTextureIndex], texCoord);
-    fColor = texColor * inColor;
+    fColor = texColor;
     return;
   }
 

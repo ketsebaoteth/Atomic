@@ -14,6 +14,15 @@ enum class ShapeType : uint32_t {
   Image = 3
 };
 
+enum class GradientType : uint8_t { None = 0, Linear, Radial };
+
+enum class GradientDirectionUnit : uint8_t { Rad = 0, Deg };
+
+struct GradientStop {
+  float position; // 0.0 - 1.0
+  math::vec4<float> color;
+};
+
 enum class FlexDirection : uint32_t { Column = 0, Row = 1 };
 
 struct SizeFit {};
@@ -53,6 +62,11 @@ struct EdgeInsets {
     return {top, right, bottom, left};
   }
 };
+
+// struct Overflow {
+//   int Hidden = 0;
+// };
+enum class Overflow : uint32_t { Hidden = 0, Visible = 1 };
 
 struct CornerRadius {
   float topLeft = 0.0f;
@@ -94,7 +108,8 @@ struct styleConfig {
   math::vec2<float> gap{0.0f, 0.0f};
   FlexDirection flexDirection = FlexDirection::Column;
 
-  math::vec4<float> color = math::vec4<float>::all(1);
+  math::vec4<float> textColor = math::vec4<float>{0, 0, 0, 1};
+  math::vec4<float> backgroundColor = math::vec4<float>::all(1);
   CornerRadius radius;
   ShapeType shape = ShapeType::RoundedRect;
 
@@ -104,7 +119,22 @@ struct styleConfig {
   float dotSize = 0.0f;
   uint32_t strokePosition = 2;
 
-  void *font = nullptr;
+  Overflow overflow = Overflow::Hidden;
+
+  GradientType gradientType = GradientType::None;
+  std::vector<GradientStop> gradientStops;
+
+  // INFO: Linear Gradient Direction in Radians
+  float gradientDirection = 0.0f;
+  float opacity = 1.0f;
+
+  math::vec4<float> clipRect{-10000.0f, -10000.0f, 100000.0f, 100000.0f};
+
+  // Radial gradient
+  math::vec2<float> gradientCenter{0.5f, 0.5f};
+  float gradientRadius = 0.5f;
+
+  ui::font::Font *font = nullptr;
   int fontSize = 16;
   ui::font::TextStyleBit styleFlag = ui::font::TextStyleBit::Regular;
   int tracking = 0;
@@ -135,8 +165,39 @@ struct styleConfig {
     return *this;
   }
 
-  constexpr styleConfig &SetColor(const math::vec4<float> &val) {
-    color = val;
+  constexpr styleConfig &SetGradientType(const GradientType val) {
+    gradientType = val;
+    return *this;
+  }
+  styleConfig &SetGradientStops(const std::vector<GradientStop> &stops) {
+    gradientStops = stops;
+    return *this;
+  }
+
+  constexpr styleConfig &SetLinearGradDirection(
+      const float angle,
+      const GradientDirectionUnit unit = GradientDirectionUnit::Rad) {
+
+    if (unit == GradientDirectionUnit::Deg) {
+      gradientDirection = angle * (3.14159265358979323846f / 180.0f);
+    } else {
+      gradientDirection = angle;
+    }
+
+    return *this;
+  }
+
+  constexpr styleConfig &SetRadialGradCenter(const math::vec2<float> &center) {
+    gradientCenter = center;
+    return *this;
+  }
+
+  constexpr styleConfig &SetTextColor(const math::vec4<float> &val) {
+    textColor = val;
+    return *this;
+  }
+  constexpr styleConfig &SetBGColor(const math::vec4<float> &val) {
+    backgroundColor = val;
     return *this;
   }
   constexpr styleConfig &SetRadius(const CornerRadius &val) {
@@ -145,6 +206,14 @@ struct styleConfig {
   }
   constexpr styleConfig &SetShape(ShapeType val) {
     shape = val;
+    return *this;
+  }
+  constexpr styleConfig &SetOpacity(float opacity) {
+    this->opacity = opacity;
+    return *this;
+  }
+  constexpr styleConfig &SetOverflow(Overflow val) {
+    overflow = val;
     return *this;
   }
 
@@ -169,7 +238,7 @@ struct styleConfig {
     return *this;
   }
 
-  constexpr styleConfig &SetFont(void *val) {
+  constexpr styleConfig &SetFont(ui::font::Font *val) {
     font = val;
     return *this;
   }
@@ -190,5 +259,41 @@ struct styleConfig {
     return *this;
   }
 };
+
+namespace Typography {
+
+inline styleConfig H1() {
+  return styleConfig().SetFontSize(32).SetStyleFlag(
+      ui::font::TextStyleBit::Bold);
+}
+
+inline styleConfig H2() {
+  return styleConfig().SetFontSize(24).SetStyleFlag(
+      ui::font::TextStyleBit::Bold);
+}
+
+inline styleConfig H3() {
+  return styleConfig().SetFontSize(20).SetStyleFlag(
+      ui::font::TextStyleBit::Bold);
+}
+
+inline styleConfig Body() {
+  return styleConfig().SetFontSize(16).SetStyleFlag(
+      ui::font::TextStyleBit::Regular);
+}
+
+inline styleConfig Small() {
+  return styleConfig().SetFontSize(14).SetStyleFlag(
+      ui::font::TextStyleBit::Regular);
+}
+
+inline styleConfig Muted() {
+  return styleConfig()
+      .SetFontSize(14)
+      .SetStyleFlag(ui::font::TextStyleBit::Regular)
+      .SetTextColor({0.6f, 0.6f, 0.6f, 1.0f});
+}
+
+} // namespace Typography
 
 } // namespace ui

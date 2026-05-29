@@ -47,12 +47,12 @@ auto AnimatedBadge(const std::string &statusText, float interpolationFactor) {
 
   return Div(ui::styleConfig()
                  .SetSize({ui::SizeFit{}, ui::SizeFit{}})
-                 .SetColor(static_cast<math::vec4<float>>(ui::Color::gray800))
+                 .SetBGColor(static_cast<math::vec4<float>>(ui::Color::gray800))
                  .SetPadding({6.0f, dynamicPaddingHorizontal, 6.0f,
                               dynamicPaddingHorizontal})
                  .SetRadius(CornerRadius::all(stableRadius)),
              Text(ui::styleConfig()
-                      .SetColor(static_cast<math::vec4<float>>(
+                      .SetBGColor(static_cast<math::vec4<float>>(
                           StylePreset::AccentTeal()))
                       .SetFontSize(12),
                   statusText));
@@ -67,11 +67,11 @@ auto ShadcnSidebarRoute(const std::string &label, bool isActive) {
 
   return Div(ui::styleConfig()
                  .SetSize({ui::SizeFill{}, ui::SizeFit{}})
-                 .SetColor(static_cast<math::vec4<float>>(selectedColor))
+                 .SetBGColor(static_cast<math::vec4<float>>(selectedColor))
                  .SetPadding({8.0f, 12.0f, 8.0f, 12.0f})
                  .SetRadius(CornerRadius::all(6.0f)),
              Text(ui::styleConfig()
-                      .SetColor(static_cast<math::vec4<float>>(textColor))
+                      .SetBGColor(static_cast<math::vec4<float>>(textColor))
                       .SetFontSize(14),
                   label));
 }
@@ -88,19 +88,19 @@ auto MorphingMatrixCard(const std::string &label,
   return Div(
       ui::styleConfig()
           .SetSize({fill, calculatedHeight})
-          .SetColor(static_cast<math::vec4<float>>(StylePreset::CardBg()))
+          .SetBGColor(static_cast<math::vec4<float>>(StylePreset::CardBg()))
           .SetPadding(EdgeInsets::all(14.0f))
           .SetRadius(CornerRadius::all(stableBorderRadius))
           .SetFlexDirection(FlexDirection::Column)
           .SetGap({5.0f, 5.0f}),
 
       Text(ui::styleConfig()
-               .SetColor(
+               .SetBGColor(
                    static_cast<math::vec4<float>>(StylePreset::MutedText()))
                .SetFontSize(12),
            label),
       Text(ui::styleConfig()
-               .SetColor(static_cast<math::vec4<float>>(livePulseColor))
+               .SetBGColor(static_cast<math::vec4<float>>(livePulseColor))
                .SetFontSize(28),
            primaryValue));
 }
@@ -114,17 +114,63 @@ auto ShadcnLogStreamRow(const std::string &timestamp, const std::string &msg,
           .SetFlexDirection(FlexDirection::Row)
           .SetGap({6.0f, 0.0f}),
       Text(ui::styleConfig()
-               .SetColor(static_cast<math::vec4<float>>(ui::Color::gray600))
+               .SetBGColor(static_cast<math::vec4<float>>(ui::Color::gray600))
                .SetFontSize(13),
            "[" + timestamp + "]"),
       Div(ui::styleConfig()
               .SetSize({4.0f, 14.0f})
-              .SetColor(static_cast<math::vec4<float>>(flagColor))
+              .SetBGColor(static_cast<math::vec4<float>>(flagColor))
               .SetRadius(CornerRadius::all(2.0f))),
       Text(ui::styleConfig()
-               .SetColor(static_cast<math::vec4<float>>(ui::Color::gray300))
+               .SetBGColor(static_cast<math::vec4<float>>(ui::Color::gray300))
                .SetFontSize(13),
            msg));
+}
+
+auto GradientTestUI() {
+  return Div(
+      ui::styleConfig()
+          .SetSize({fill, fill})
+          .SetBGColor({0, 0, 0, 0})
+          .SetPadding(EdgeInsets::all(0.0f))
+          .SetFlexDirection(FlexDirection::Column)
+          .SetGap({12.0f, 12.0f}),
+
+      // ---------------------------
+      // LINEAR GRADIENT BOX
+      // ---------------------------
+      Div(ui::styleConfig().SetSize({fill, 80.0f}).SetBGColor({0, 0, 0, 0})),
+
+      Div(ui::styleConfig()
+              .SetSize({fill, 120.0f})
+              .SetGradientType(GradientType::Linear)
+              .SetLinearGradDirection(45.0f,
+                                      GradientDirectionUnit::Deg) // 45 degrees
+              .SetGradientStops({{0.0f, {1, 1, 1, 1}},
+                                 {0.5f, {0.5, 0.5, 0.5f, 1}},
+                                 {1.0f, {0, 0, 0, 1}}})
+              //.SetBGColor({1, 0, 1, 1})
+              .SetRadius(CornerRadius::all(12.0f))
+              .SetPadding(EdgeInsets::all(10.0f))
+              .SetOpacity(1.0f),
+
+          Text(ui::styleConfig().SetFontSize(20).SetBGColor({1, 1, 1, 1}),
+               "Linear Gradient")),
+
+      // ---------------------------
+      // RADIAL GRADIENT BOX
+      // ---------------------------
+      Div(ui::styleConfig()
+              .SetSize({fill, 160.0f})
+              .SetGradientType(GradientType::Radial)
+              .SetRadialGradCenter({0.3f, 0.3f})
+              .SetGradientStops({{0.0f, {0, 0, 0, 1}}, {0.5f, {1, 1, 1, 1}}})
+              .SetRadius(CornerRadius::all(16.0f))
+              .SetOpacity(0.9f),
+
+          Text(ui::styleConfig().SetFontSize(18).SetBGColor(
+                   {0.9f, 0.9f, 0.9f, 1}),
+               "Radial Gradient Layer")));
 }
 
 // ============================================================================
@@ -140,7 +186,7 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
   return Div(
       ui::styleConfig()
           .SetSize({fill, fill})
-          .SetColor(static_cast<math::vec4<float>>(bg))
+          .SetBGColor(static_cast<math::vec4<float>>(bg))
           .SetPadding(EdgeInsets::all(16.0f))
           .SetFlexDirection(FlexDirection::Row)
           .SetGap({12.0f, 0.0f}),
@@ -148,20 +194,21 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
       // 1. Left Rail Navigation (Rigid Static Grounding)
       Div(ui::styleConfig()
               .SetSize({220.0f, fill})
-              .SetColor(static_cast<math::vec4<float>>(cardBg))
+              .SetBGColor(static_cast<math::vec4<float>>(cardBg))
               .SetPadding(EdgeInsets::all(16.0f))
               .SetRadius(CornerRadius::all(8.0f))
               .SetFlexDirection(FlexDirection::Column)
               .SetGap({6.0f, 6.0f}),
 
           Text(ui::styleConfig()
-                   .SetColor(static_cast<math::vec4<float>>(ui::Color::gray500))
+                   .SetBGColor(
+                       static_cast<math::vec4<float>>(ui::Color::gray500))
                    .SetFontSize(18),
                "ATOMIC_DSP"),
 
           Div(ui::styleConfig()
                   .SetSize({ui::SizeFill{}, 1.0f})
-                  .SetColor(static_cast<math::vec4<float>>(border))),
+                  .SetBGColor(static_cast<math::vec4<float>>(border))),
 
           ShadcnSidebarRoute("System Status", true),
           ShadcnSidebarRoute("Graph Engines", false),
@@ -170,20 +217,21 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
       // 2. Workspace Area
       Div(ui::styleConfig()
               .SetSize({fill, fill})
-              .SetColor(static_cast<math::vec4<float>>(ui::Color::transparent))
+              .SetBGColor(
+                  static_cast<math::vec4<float>>(ui::Color::transparent))
               .SetFlexDirection(FlexDirection::Column)
               .SetGap({12.0f, 12.0f}),
 
           // Top Command Bar
           Div(ui::styleConfig()
                   .SetSize({ui::SizeFill{}, ui::SizeFit{}})
-                  .SetColor(static_cast<math::vec4<float>>(cardBg))
+                  .SetBGColor(static_cast<math::vec4<float>>(cardBg))
                   .SetPadding({12.0f, 16.0f, 12.0f, 16.0f})
                   .SetRadius(CornerRadius::all(8.0f))
                   .SetFlexDirection(FlexDirection::Row)
                   .SetGap({0.0f, 0.0f}),
               Text(ui::styleConfig()
-                       .SetColor(
+                       .SetBGColor(
                            static_cast<math::vec4<float>>(ui::Color::gray100))
                        .SetFontSize(20),
                    "Topology Overview Engine Pipeline"),
@@ -192,7 +240,7 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
           // 3. Isolated Morphing Grid Row
           Div(ui::styleConfig()
                   .SetSize({ui::SizeFill{}, ui::SizeFit{}})
-                  .SetColor(
+                  .SetBGColor(
                       static_cast<math::vec4<float>>(ui::Color::transparent))
                   .SetFlexDirection(FlexDirection::Row)
                   .SetGap({10.0f, 0.0f}),
@@ -209,21 +257,21 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
           // flags)
           Div(ui::styleConfig()
                   .SetSize({ui::SizeFill{}, ui::SizeFill{}})
-                  .SetColor(static_cast<math::vec4<float>>(cardBg))
+                  .SetBGColor(static_cast<math::vec4<float>>(cardBg))
                   .SetPadding(EdgeInsets::all(16.0f))
                   .SetRadius(CornerRadius::all(8.0f))
                   .SetFlexDirection(FlexDirection::Column)
                   .SetGap({5.0f, 5.0f}),
 
               Text(ui::styleConfig()
-                       .SetColor(
+                       .SetBGColor(
                            static_cast<math::vec4<float>>(ui::Color::gray200))
                        .SetFontSize(14),
                    "Live Hardware Virtualization Logs Console Stream:"),
 
               Div(ui::styleConfig()
                       .SetSize({ui::SizeFill{}, 1.0f})
-                      .SetColor(static_cast<math::vec4<float>>(border))),
+                      .SetBGColor(static_cast<math::vec4<float>>(border))),
 
               ShadcnLogStreamRow("14:22:01",
                                  "Allocating matrix graphics pipelines across "
@@ -236,7 +284,8 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
               ShadcnLogStreamRow("14:22:02",
                                  "Structural node canvas elements successfully "
                                  "drawn without memory hitches.",
-                                 StylePreset::AccentTeal()))));
+                                 StylePreset::AccentTeal()),
+              GradientTestUI())));
 }
 
 // ============================================================================

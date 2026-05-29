@@ -19,23 +19,104 @@ struct UIPushConstants {
   math::vec2<float> resolution;
 };
 
+// struct UIInstance {
+//   alignas(8) math::vec2<float> pos;
+//   alignas(8) math::vec2<float> size;
+//   alignas(16) math::vec4<float> color;
+//   alignas(16) math::vec4<float> radius;
+//   alignas(4) uint32_t shapeType;
+//
+//   alignas(4) float strokeWidth;
+//   alignas(4) uint32_t strokePosition;
+//   alignas(4) float dotGap;
+//   alignas(4) float dotSize;
+//
+//   alignas(4) uint32_t textureIndex;
+//
+//   alignas(8) math::vec2<float> uvMin;
+//   alignas(8) math::vec2<float> uvMax;
+//   alignas(16) math::vec4<float> strokeColor;
+// };
+
+struct GradientStopGPU {
+  alignas(16) math::vec4<float> color;
+  alignas(4) float position;
+
+  // std430 padding
+  alignas(4) float _pad0 = 0.0f;
+  alignas(4) float _pad1 = 0.0f;
+  alignas(4) float _pad2 = 0.0f;
+};
+
 struct UIInstance {
+  // ---------------------------------
+  // Base geometry
+  // ---------------------------------
+
   alignas(8) math::vec2<float> pos;
   alignas(8) math::vec2<float> size;
-  alignas(16) math::vec4<float> color;
+
+  // ---------------------------------
+  // Fill / shape
+  // ---------------------------------
+
+  alignas(16) math::vec4<float> backgroundColor;
   alignas(16) math::vec4<float> radius;
+
+  alignas(4) float opacity;
   alignas(4) uint32_t shapeType;
+
+  // ---------------------------------
+  // Stroke
+  // ---------------------------------
 
   alignas(4) float strokeWidth;
   alignas(4) uint32_t strokePosition;
   alignas(4) float dotGap;
   alignas(4) float dotSize;
 
+  // ---------------------------------
+  // Texture
+  // ---------------------------------
+
   alignas(4) uint32_t textureIndex;
+
+  // occupies alignment gap
+  alignas(4) uint32_t _padTex = 0;
 
   alignas(8) math::vec2<float> uvMin;
   alignas(8) math::vec2<float> uvMax;
+
+  // ---------------------------------
+  // Stroke color
+  // ---------------------------------
+
   alignas(16) math::vec4<float> strokeColor;
+
+  // ---------------------------------
+  // Gradient
+  // ---------------------------------
+
+  alignas(4) uint32_t gradientType;
+
+  // radians
+  alignas(4) float gradientDirection;
+
+  alignas(8) math::vec2<float> gradientCenter;
+
+  alignas(4) float gradientRadius;
+
+  // Offset into global gradient stop SSBO
+  alignas(4) uint32_t gradientStopOffset;
+
+  // Number of stops
+  alignas(4) uint32_t gradientStopCount;
+
+  // std430 alignment padding
+  alignas(4) uint32_t _padGradient = 0;
+
+  // Bounds Clip passing
+  alignas(16) math::vec4<float> clipRect;
 };
 
 class VulkanRenderer : public Renderer {
@@ -54,6 +135,7 @@ public:
     m_default_font = std::move(font);
   }
   ui::font::Font *get_default_font() override { return m_default_font.get(); }
+  ui::font::Font *getFont(ui::font::Font *font);
 
   void set_asset_loader(ui::asset::AssetLoader *loader) {
     m_asset_loader = loader;
@@ -118,8 +200,11 @@ private:
 
   class Window *m_window;
   std::vector<UIInstance> m_ui_queue;
+  std::vector<GradientStopGPU> m_gradientStops;
   VkBuffer m_storageBuffer;
   VkDeviceMemory m_storageBufferMemory;
+  VkBuffer m_gradientBuffer;
+  VkDeviceMemory m_gradientBufferMemory;
 
   VkInstance m_instance = VK_NULL_HANDLE;
   VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;

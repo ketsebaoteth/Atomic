@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <fontconfig/fontconfig.h>
 #include <stdexcept>
 #include <vector>
 
@@ -23,13 +24,62 @@ bool FreeTypeFont::initFreeType() {
   return s_libInited;
 }
 
+static std::string resolveFont(const std::string &name) {
+  FcInit();
+
+  FcPattern *pattern = FcNameParse((const FcChar8 *)name.c_str());
+
+  FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
+  FcDefaultSubstitute(pattern);
+
+  FcResult result;
+  FcPattern *match = FcFontMatch(nullptr, pattern, &result);
+
+  FcPatternDestroy(pattern);
+
+  if (!match) {
+    return "";
+  }
+
+  FcChar8 *file = nullptr;
+
+  if (FcPatternGetString(match, FC_FILE, 0, &file) != FcResultMatch) {
+    FcPatternDestroy(match);
+    return "";
+  }
+
+  std::string path = (char *)file;
+
+  FcPatternDestroy(match);
+
+  return path;
+}
+
 bool FreeTypeFont::load(const std::string &path, uint32_t size) {
   if (!s_libInited) {
     initFreeType();
   }
 
-  if (FT_New_Face(s_library, path.c_str(), 0, &m_face) != 0) {
-    throw std::runtime_error("Failed to load font file at path: " + path);
+  std::string actualPath = path;
+
+  // Try exact path/file first
+  if (FT_New_Face(s_library, actualPath.c_str(), 0, &m_face) != 0) {
+
+    // Try system font lookup
+    actualPath = resolveFont(path);
+
+    if (actualPath.empty() ||
+        FT_New_Face(s_library, actualPath.c_str(), 0, &m_face) != 0) {
+
+      // Final fallback
+      actualPath = resolveFont("inter");
+
+      if (actualPath.empty() ||
+          FT_New_Face(s_library, actualPath.c_str(), 0, &m_face) != 0) {
+
+        throw std::runtime_error("Failed to load any usable font");
+      }
+    }
   }
 
   m_initialSize = size;
@@ -41,8 +91,6 @@ bool FreeTypeFont::load(const std::string &path, uint32_t size) {
   m_maxRowHeight = 0;
   m_textureDirty = true;
 
-  // Warm up the glyph cache using the runtime configuration font size converted
-  // to float
   generateAtlas();
 
   return true;

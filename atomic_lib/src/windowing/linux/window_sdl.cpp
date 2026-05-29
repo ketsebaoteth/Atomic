@@ -106,6 +106,9 @@ void SDLWindow::render() {
                            dpiScale);
       break;
     }
+    case ElementType::IMAGE:
+      // not implemented directly in loop demo but keep format safe
+      break;
     default:
       break;
     }

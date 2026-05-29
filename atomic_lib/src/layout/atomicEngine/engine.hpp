@@ -250,14 +250,23 @@ private:
                                                  paddingY, parentAllocation.y);
   }
 
-  void ExecPositionPass(IElement *node, const math::vec2<float> &globalOrigin) {
+  void ExecPositionPass(IElement *node, const math::vec2<float> &globalOrigin, const math::vec4<float>& currentClip = {-10000.0f, -10000.0f, 100000.0f, 100000.0f}) {
     if (!node)
       return;
 
     LayoutAccumulation &metrics = node->GetLayoutMetrics();
-    const ui::styleConfig &style = node->GetStyle();
+    ui::styleConfig &style = node->GetStyle();
 
     metrics.global_position = globalOrigin + metrics.local_position;
+
+    math::vec4<float> myClip = currentClip;
+    if (style.overflow == Overflow::Hidden) {
+       myClip.x = std::max(currentClip.x, metrics.global_position.x);
+       myClip.y = std::max(currentClip.y, metrics.global_position.y);
+       myClip.z = std::min(currentClip.z, metrics.global_position.x + metrics.computed_size.x);
+       myClip.w = std::min(currentClip.w, metrics.global_position.y + metrics.computed_size.y);
+    }
+    style.clipRect = myClip;
 
     math::vec2<float> childCursorOffset{style.padding.left * m_globalDpiScale,
                                         style.padding.top * m_globalDpiScale};
@@ -287,7 +296,7 @@ private:
             ((childStyle.margin.bottom + style.gap.y) * m_globalDpiScale);
       }
 
-      ExecPositionPass(child.get(), metrics.global_position);
+      ExecPositionPass(child.get(), metrics.global_position, style.clipRect);
     }
   }
 

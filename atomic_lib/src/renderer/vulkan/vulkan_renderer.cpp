@@ -193,7 +193,7 @@ void VulkanRenderer::init_vulkan() {
   VkResult createDeviceResult =
       vkCreateDevice(m_physical_device, &createInfo, nullptr, &m_device);
   if (createDeviceResult != VK_SUCCESS) {
-    throw std::runtime_error("coudnt create vulkan device!");
+    throw std::runtime_error("couldn't create vulkan device!");
   }
 
   vkGetDeviceQueue(m_device, m_graphicsSupportingQueueFamilyIndex, 0,
@@ -201,8 +201,23 @@ void VulkanRenderer::init_vulkan() {
   // load default font
   // TODO: find a better place for this
   auto default_font = std::make_unique<ui::font::FreeTypeFont>();
-  default_font->load("inter.ttf", 18);
+  default_font->load("inter", 18);
   set_default_font(std::move(default_font));
+}
+
+ui::font::Font *VulkanRenderer::getFont(ui::font::Font *font) {
+  // priority:
+  // 1. explicit font from style
+  // 2. default renderer font
+  // 3. nullptr safety fallback
+
+  if (font)
+    return font;
+
+  if (m_default_font)
+    return m_default_font.get();
+
+  return nullptr;
 }
 
 static VkSurfaceFormatKHR chooseSwapSurfaceFormat(
@@ -559,8 +574,15 @@ void VulkanRenderer::create_descriptor_set_layout() {
   samplerLayoutBindingPic.pImmutableSamplers = nullptr;
   samplerLayoutBindingPic.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-  std::array<VkDescriptorSetLayoutBinding, 3> bindings = {
-      layoutBinding, samplerLayoutBinding, samplerLayoutBindingPic};
+  std::array<VkDescriptorSetLayoutBinding, 4> bindings = {
+      layoutBinding, samplerLayoutBinding, samplerLayoutBindingPic, []() {
+        VkDescriptorSetLayoutBinding gb{};
+        gb.binding = 3;
+        gb.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        gb.descriptorCount = 1;
+        gb.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+        return gb;
+      }()};
 
   VkDescriptorSetLayoutCreateInfo layoutInfo{
       VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
@@ -574,12 +596,15 @@ void VulkanRenderer::create_descriptor_set_layout() {
 }
 
 void VulkanRenderer::create_descriptor_pool() {
-  std::array<VkDescriptorPoolSize, 2> poolSizes{};
+  std::array<VkDescriptorPoolSize, 3> poolSizes{};
   poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
   poolSizes[0].descriptorCount = 1;
 
   poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
   poolSizes[1].descriptorCount = 1 + 16;
+
+  poolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  poolSizes[2].descriptorCount = 1;
 
   VkDescriptorPoolCreateInfo poolInfo{
       VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
@@ -618,8 +643,22 @@ void VulkanRenderer::create_descriptor_set() {
   bufferWrite.descriptorCount = 1;
   bufferWrite.pBufferInfo = &bufferInfo;
 
-  // Execute the initial storage buffer binding update pass
-  vkUpdateDescriptorSets(m_device, 1, &bufferWrite, 0, nullptr);
+  VkDescriptorBufferInfo gradBufferInfo{};
+  gradBufferInfo.buffer = m_gradientBuffer;
+  gradBufferInfo.offset = 0;
+  gradBufferInfo.range = VK_WHOLE_SIZE;
+
+  VkWriteDescriptorSet gradBufferWrite{VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+  gradBufferWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  gradBufferWrite.dstSet = m_descriptorSet;
+  gradBufferWrite.dstBinding = 3;
+  gradBufferWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  gradBufferWrite.descriptorCount = 1;
+  gradBufferWrite.pBufferInfo = &gradBufferInfo;
+
+  std::array<VkWriteDescriptorSet, 2> sets = {bufferWrite, gradBufferWrite};
+  vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(sets.size()),
+                         sets.data(), 0, nullptr);
 
   // Note: binding = 1 (fontAtlas) and binding = 2 (uiTexture[16]) are left
 }
@@ -709,6 +748,15 @@ void VulkanRenderer::render_batch() {
   memcpy(data, m_ui_queue.data(), m_ui_queue.size() * sizeof(UIInstance));
   vkUnmapMemory(m_device, m_storageBufferMemory);
 
+  if (!m_gradientStops.empty()) {
+    void *gradData;
+    vkMapMemory(m_device, m_gradientBufferMemory, 0,
+                m_gradientStops.size() * sizeof(GradientStopGPU), 0, &gradData);
+    memcpy(gradData, m_gradientStops.data(),
+           m_gradientStops.size() * sizeof(GradientStopGPU));
+    vkUnmapMemory(m_device, m_gradientBufferMemory);
+  }
+
   vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     m_graphicsPipeline);
 
@@ -736,6 +784,7 @@ void VulkanRenderer::render_batch() {
   vkCmdDraw(m_commandBuffer, 6, static_cast<uint32_t>(m_ui_queue.size()), 0, 0);
 
   m_ui_queue.clear();
+  m_gradientStops.clear();
 }
 
 void VulkanRenderer::create_storage_buffer() {
@@ -759,6 +808,23 @@ void VulkanRenderer::create_storage_buffer() {
 
   vkAllocateMemory(m_device, &allocInfo, nullptr, &m_storageBufferMemory);
   vkBindBufferMemory(m_device, m_storageBuffer, m_storageBufferMemory, 0);
+
+  // Gradient Storage Buffer
+  VkBufferCreateInfo gradInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  gradInfo.size = sizeof(GradientStopGPU) * 10000;
+  gradInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+  gradInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  vkCreateBuffer(m_device, &gradInfo, nullptr, &m_gradientBuffer);
+
+  VkMemoryRequirements gradMemReqs;
+  vkGetBufferMemoryRequirements(m_device, m_gradientBuffer, &gradMemReqs);
+  allocInfo.allocationSize = gradMemReqs.size;
+  allocInfo.memoryTypeIndex = findMemoryType(
+      gradMemReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                      VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+  vkAllocateMemory(m_device, &allocInfo, nullptr, &m_gradientBufferMemory);
+  vkBindBufferMemory(m_device, m_gradientBuffer, m_gradientBufferMemory, 0);
 }
 
 void VulkanRenderer::on_resize(int width, int height) {

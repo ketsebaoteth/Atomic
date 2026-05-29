@@ -12,27 +12,6 @@
 
 namespace ui {
 
-// void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
-//                               const math::vec2<float> &computedSize,
-//                               const ui::styleConfig *style) {
-//   if (!style)
-//     return;
-//
-//   UIInstance instance{};
-//   instance.pos = globalPosition;
-//   instance.size = computedSize;
-//   instance.color = style->backgroundColor;
-//   instance.radius = style->radius;
-//   instance.shapeType = static_cast<uint32_t>(style->shape);
-//   instance.strokeWidth = style->strokeWidth;
-//   instance.strokeColor = style->strokeColor;
-//   instance.dotGap = style->dotGap;
-//   instance.dotSize = style->dotSize;
-//   instance.strokePosition = style->strokePosition;
-//
-//   m_ui_queue.push_back(instance);
-// }
-
 void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
                               const math::vec2<float> &computedSize,
                               const ui::styleConfig *style) {

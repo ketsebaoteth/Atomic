@@ -37,10 +37,17 @@ struct UIInstance {
 
     vec2 gradientCenter;
 
+    // float gradientRadius;
+    //
+    // uint gradientStopOffset;
+    // uint gradientStopCount;
     float gradientRadius;
-
-    uint gradientStopOffset;
     uint gradientStopCount;
+
+    uint _pad0;
+    uint _pad1;
+
+    GradientStop gradientStops[8];
 };
 
 layout(std430, binding = 0) readonly buffer UIBuffer {
@@ -70,10 +77,11 @@ layout(location = 13) flat out uint outGradientType;
 layout(location = 14) out float outGradientDirection;
 layout(location = 15) out vec2 outGradientCenter;
 layout(location = 16) out float outGradientRadius;
-layout(location = 17) flat out uint outGradientStopOffset;
+// layout(location = 17) flat out uint outGradientStopOffset;
 layout(location = 18) flat out uint outGradientStopCount;
 layout(location = 19) out float outOpacity;
 layout(location = 20) flat out uint outIsRadialUniform;
+layout(location = 21) flat out uint outInstanceIndex;
 
 const vec2 positions[6] = vec2[](
     vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0),
@@ -113,9 +121,10 @@ void main() {
     outGradientDirection  = data.gradientDirection;
     outGradientCenter     = data.gradientCenter;
     outGradientRadius     = data.gradientRadius;
-    outGradientStopOffset = data.gradientStopOffset;
+    //outGradientStopOffset = data.gradientStopOffset;
     outGradientStopCount  = data.gradientStopCount;
     outIsRadialUniform    = data.isRadialUniform;
+    outInstanceIndex = gl_InstanceIndex;
 
     vec2 normalizedPos = screenPos / globals.resolution;
     gl_Position = vec4(normalizedPos * 2.0 - 1.0, 0.0, 1.0);

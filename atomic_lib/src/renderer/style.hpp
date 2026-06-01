@@ -19,11 +19,11 @@ enum class GradientType : uint32_t { None = 0, Linear, Radial };
 enum class GradientDirectionUnit : uint8_t { Rad = 0, Deg };
 
 struct GradientStop {
-  float position; // 0.0 - 1.0
-  math::vec4<float> color;
-  float _pad0;
-  float _pad1;
-  float _pad2;
+  alignas(16) math::vec4<float> color;
+  alignas(4) float position; // 0.0 - 1.0
+  alignas(4) float _pad0;
+  alignas(4) float _pad1;
+  alignas(4) float _pad2;
 };
 
 enum class FlexDirection : uint32_t { Column = 0, Row = 1 };
@@ -149,8 +149,12 @@ struct styleConfig {
 
     // Offset 128
     alignas(4) float gradientRadius = 0.5f;
-    alignas(4) uint32_t gradientStopOffset = 0;
+    // alignas(4) uint32_t gradientStopOffset = 0;
     alignas(4) uint32_t gradientStopCount = 0;
+    alignas(8) uint32_t _padding[2]{};
+
+    alignas(16) GradientStop gradientStops[8];
+
   } styleConfigGPU;
 
   // INFO: GPU only data ends here
@@ -168,7 +172,7 @@ struct styleConfig {
 
   Overflow overflow = Overflow::Hidden;
 
-  std::vector<GradientStop> gradientStops;
+  // std::vector<GradientStop> gradientStops;
 
   // INFO: Linear Gradient Direction in Radians
 
@@ -208,10 +212,23 @@ struct styleConfig {
     styleConfigGPU.gradientType = static_cast<uint32_t>(val);
     return *this;
   }
-  styleConfig &SetGradientStops(const std::vector<GradientStop> &stops) {
-    gradientStops = stops;
+
+  styleConfig &SetGradientStops(std::initializer_list<GradientStop> stops) {
+
+    styleConfigGPU.gradientStopCount =
+        static_cast<uint32_t>(std::min<size_t>(stops.size(), 8));
+
+    uint32_t i = 0;
+    for (const auto &stop : stops) {
+      if (i >= 8)
+        break;
+
+      styleConfigGPU.gradientStops[i++] = stop;
+    }
+
     return *this;
   }
+
   constexpr styleConfig &SetGradientRadius(const float radius) {
     styleConfigGPU.gradientRadius = radius;
     return *this;

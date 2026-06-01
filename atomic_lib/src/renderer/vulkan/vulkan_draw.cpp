@@ -27,28 +27,28 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   instance.pos = globalPosition;
   instance.size = computedSize;
 
-  instance.gradientStopCount =
-      static_cast<uint32_t>(style->gradientStops.size());
-
-  uint32_t offset = static_cast<uint32_t>(m_gradientStops.size());
-
-  instance.gradientStopOffset =
-      static_cast<uint32_t>(style->gradientStops.size());
-
-  // Append stops into global GPU buffer
-  for (const auto &stop : style->gradientStops) {
-
-    GradientStopGPU gpuStop{};
-
-    gpuStop.position = stop.position;
-    gpuStop.color = stop.color;
-
-    m_gradientStops.push_back(gpuStop);
-  }
-
-  instance.gradientStopOffset = offset;
-  instance.gradientStopCount =
-      static_cast<uint32_t>(style->gradientStops.size());
+  // instance.gradientStopCount =
+  //     static_cast<uint32_t>(style->gradientStops.size());
+  //
+  // uint32_t offset = static_cast<uint32_t>(m_gradientStops.size());
+  //
+  // instance.gradientStopOffset =
+  //     static_cast<uint32_t>(style->gradientStops.size());
+  //
+  // // Append stops into global GPU buffer
+  // for (const auto &stop : style->gradientStops) {
+  //
+  //   GradientStopGPU gpuStop{};
+  //
+  //   gpuStop.position = stop.position;
+  //   gpuStop.color = stop.color;
+  //
+  //   m_gradientStops.push_back(gpuStop);
+  // }
+  //
+  // instance.gradientStopOffset = offset;
+  // instance.gradientStopCount =
+  //     static_cast<uint32_t>(style->gradientStops.size());
 
   // ---------------------------------
   // Queue draw instance

@@ -45,7 +45,8 @@ layout(location = 16) in float inGradientRadius;
 layout(location = 17) flat in uint inGradientStopOffset;
 layout(location = 18) flat in uint inGradientStopCount;
 layout(location = 19) in float inOpacity;
-layout(location = 20) flat in vec4 inClipRect;
+layout(location = 20) flat in uint inIsRadialUniform;
+// layout(location = 20) flat in vec4 inClipRect;
 
 layout(location = 0) out vec4 fColor;
 
@@ -64,10 +65,7 @@ vec4 sampleGradient(float t)
     GradientStop first =
         gradientStops[inGradientStopOffset];
 
-    if (inGradientStopCount == 1)
-        return first.color;
-
-    if (t <= first.position)
+    if (inGradientStopCount == 1 || t <= first.position)
         return first.color;
 
     for (uint i = 0;
@@ -137,11 +135,28 @@ vec4 computeGradient()
 
     else if (inGradientType == GRADIENT_RADIAL)
     {
-        float dist =
-            distance(
-                inUV,
-                inGradientCenter
-            );
+      float dist;
+
+      // INFO: No confusion, inIsRadialUniform is int but grabbed from styleConfig as bool
+      if (inIsRadialUniform != 0) {
+        // 1. Calculate the aspect ratio of the rectangle (e.g., 2.0 if it's twice as wide as it is tall)
+        float aspectRatio = inSize.x / inSize.y;
+
+        // 2. Adjust the X coordinate of both the current position and the center by the aspect ratio
+        vec2 correctedUV     = vec2(inUV.x * aspectRatio, inUV.y);
+        vec2 correctedCenter = vec2(inGradientCenter.x * aspectRatio, inGradientCenter.y);
+
+        // 3. Calculate the true geometric distance in this un-distorted space
+        dist = distance(correctedUV, correctedCenter);
+
+      } else {
+        dist =
+             distance(
+                 inUV,
+                 inGradientCenter
+             );
+      }
+
 
         t =
             dist / inGradientRadius;
@@ -154,12 +169,12 @@ vec4 computeGradient()
 
 void main(){
 
-  if (inClipRect.z > inClipRect.x) {
-      if (gl_FragCoord.x < inClipRect.x || gl_FragCoord.y < inClipRect.y || 
-          gl_FragCoord.x > inClipRect.z || gl_FragCoord.y > inClipRect.w) {
-          discard;
-      }
-  }
+  // if (inClipRect.z > inClipRect.x) {
+  //     if (gl_FragCoord.x < inClipRect.x || gl_FragCoord.y < inClipRect.y || 
+  //         gl_FragCoord.x > inClipRect.z || gl_FragCoord.y > inClipRect.w) {
+  //         discard;
+  //     }
+  // }
 
   if (inShapeType == SHAPE_TEXT) {
     vec2 texCoord = mix(inUVMin, inUVMax, inUV);

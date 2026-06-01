@@ -94,7 +94,7 @@ struct UIInstance {
   alignas(4) uint32_t gradientStopCount;
 
   // std430 alignment padding
-  alignas(4) uint32_t _padGradient = 0;
+  alignas(4) uint32_t isRadialUniform = 1;
 
   // Bounds Clip passing
   alignas(16) math::vec4<float> clipRect;

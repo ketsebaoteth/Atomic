@@ -144,7 +144,7 @@ auto GradientTestUI() {
       Div(ui::styleConfig()
               .SetSize({fill, 120.0f})
               .SetGradientType(GradientType::Linear)
-              .SetLinearGradDirection(45.0f,
+              .SetLinearGradDirection(0.0f,
                                       GradientDirectionUnit::Deg) // 45 degrees
               .SetGradientStops({{0.0f, {1, 1, 1, 1}},
                                  {0.5f, {0.5, 0.5, 0.5f, 1}},
@@ -163,8 +163,8 @@ auto GradientTestUI() {
       Div(ui::styleConfig()
               .SetSize({fill, 160.0f})
               .SetGradientType(GradientType::Radial)
-              .SetRadialGradCenter({0.3f, 0.3f})
-              .SetGradientStops({{0.0f, {0, 0, 0, 1}}, {0.5f, {1, 1, 1, 1}}})
+              .SetRadialGradCenter({0.5f, 0.5f})
+              .SetGradientStops({{0.0f, {0, 0, 0, 1}}, {1, {1, 1, 1, 1}}})
               .SetRadius(CornerRadius::all(16.0f))
               .SetOpacity(0.9f),
 

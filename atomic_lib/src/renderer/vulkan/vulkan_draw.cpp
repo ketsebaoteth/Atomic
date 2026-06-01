@@ -63,6 +63,7 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
 
   instance.opacity = style->opacity;
   instance.clipRect = style->clipRect;
+  instance.isRadialUniform = 1;
 
   // ---------------------------------
   // Gradient
@@ -255,7 +256,9 @@ void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
   instance.dotGap = style ? style->dotGap : 0.0f;
   instance.dotSize = style ? style->dotSize : 0.0f;
   instance.opacity = style ? style->opacity : 1.0f;
-  instance.clipRect = style ? style->clipRect : math::vec4<float>{-10000.0f, -10000.0f, 100000.0f, 100000.0f};
+  instance.clipRect =
+      style ? style->clipRect
+            : math::vec4<float>{-10000.0f, -10000.0f, 100000.0f, 100000.0f};
 
   m_ui_queue.push_back(instance);
 }

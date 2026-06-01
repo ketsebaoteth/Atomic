@@ -46,9 +46,6 @@ struct UIInstance {
 layout(std430, binding = 0) readonly buffer UIBuffer {
     UIInstance instances[];
 };
-// layout(std430, binding = 3) readonly buffer GradientBuffer {
-//     GradientStop gradientStops[];
-// };
 
 layout(binding = 1) uniform sampler2D fontAtlas; 
 layout(binding = 2) uniform sampler2D uiTexture[16];

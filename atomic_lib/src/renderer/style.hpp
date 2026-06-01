@@ -91,45 +91,34 @@ struct CornerRadius {
 
 struct styleConfig {
   // INFO: GPU only data starts here
-  // Offset 0
   struct StyleConfigGPU {
     alignas(8) math::vec2<float> pos{0.0f, 0.0f};
     alignas(8) math::vec2<float> size{fit, fit};
 
-    // Offset 16
     alignas(16) math::vec4<float> backgroundColor = math::vec4<float>::all(1);
 
-    // Offset 32
     alignas(16) math::vec4<float> radius;
 
-    // Offset 48
     alignas(4) float opacity = 1.0f;
     alignas(4) uint32_t shapeType = 0;
     alignas(4) float strokeWidth = 0.0f;
     alignas(4) uint32_t strokePosition = 2;
 
-    // Offset 64
     alignas(4) float dotGap = 0.0f;
     alignas(4) float dotSize = 0.0f;
     alignas(4) uint32_t textureIndex = 0;
     alignas(4) uint32_t isRadialUniform = true;
 
-    // Offset 80
     alignas(8) math::vec2<float> uvMin{0.0f, 0.0f};
     alignas(8) math::vec2<float> uvMax{1.0f, 1.0f};
 
-    // Offset 96
     alignas(16) math::vec4<float> strokeColor{0.3f, 0.3f, 0.3f, 1.0f};
 
-    // Offset 112
     alignas(4) uint32_t gradientType = 0;
     alignas(4) float gradientDirection = 0.0f;
-    alignas(8) math::vec2<float> gradientCenter{
-        0.5f, 0.5f}; // Fits perfectly on 8-byte boundary [120-127]
+    alignas(8) math::vec2<float> gradientCenter{0.5f, 0.5f};
 
-    // Offset 128
     alignas(4) float gradientRadius = 0.5f;
-    // alignas(4) uint32_t gradientStopOffset = 0;
     alignas(4) uint32_t gradientStopCount = 0;
     alignas(8) uint32_t _padding[2]{};
 

@@ -3,7 +3,7 @@
 #include "math/vec.hpp"
 #include "renderer/font/interface.hpp"
 #include <cstdint>
-#include <variant>
+// #include <variant>
 
 namespace ui {
 
@@ -14,29 +14,35 @@ enum class ShapeType : uint32_t {
   Image = 3
 };
 
-enum class GradientType : uint8_t { None = 0, Linear, Radial };
+enum class GradientType : uint32_t { None = 0, Linear, Radial };
 
 enum class GradientDirectionUnit : uint8_t { Rad = 0, Deg };
 
 struct GradientStop {
   float position; // 0.0 - 1.0
   math::vec4<float> color;
+  float _pad0;
+  float _pad1;
+  float _pad2;
 };
 
 enum class FlexDirection : uint32_t { Column = 0, Row = 1 };
 
-struct SizeFit {};
-struct SizeFill {};
+// struct SizeFit {};
+// struct SizeFill {};
 
-using Size = std::variant<float, SizeFit, SizeFill>;
+// using Size = std::variant<float, SizeFit, SizeFill>;
 
-inline constexpr SizeFit fit{};
-inline constexpr SizeFill fill{};
+// inline constexpr SizeFit fit{};
+// inline constexpr SizeFill fill{};
 
-struct Size2D {
-  Size x = fit;
-  Size y = fit;
-};
+inline constexpr float fit = -1.0f;
+inline constexpr float fill = -2.0f;
+
+// struct Size2D {
+//   Size x = fit;
+//   Size y = fit;
+// };
 
 struct EdgeInsets {
   float top = 0.0f;
@@ -99,9 +105,64 @@ struct CornerRadius {
   }
 };
 
+constexpr size_t GPU_INSTANCE_SIZE = 416;
+
 struct styleConfig {
-  math::vec2<float> pos{0.0f, 0.0f};
-  Size2D size{ui::SizeFit{}, ui::SizeFit{}};
+  // ========================================================================
+  // GPU-MAPPED BLIT ZONE (Exact byte alignment matching your std430 shader)
+  // ========================================================================
+
+  // INFO: GPU only data starts here
+  // Offset 0
+  alignas(8) math::vec2<float> pos{0.0f, 0.0f};
+  alignas(8) math::vec2<float> size{fit, fit};
+
+  // Offset 16
+  alignas(16) math::vec4<float> backgroundColor = math::vec4<float>::all(1);
+
+  // Offset 32
+  alignas(16) math::vec4<float> radius;
+
+  // Offset 48
+  alignas(4) float opacity = 1.0f;
+  alignas(4) uint32_t shapeType = 0;
+  alignas(4) float strokeWidth = 0.0f;
+  alignas(4) uint32_t strokePosition = 2;
+
+  // Offset 64
+  alignas(4) float dotGap = 0.0f;
+  alignas(4) float dotSize = 0.0f;
+  alignas(4) uint32_t textureIndex = 0;
+  alignas(4) uint32_t isRadialUniform = 1;
+
+  // Offset 80
+  alignas(8) math::vec2<float> uvMin{0.0f, 0.0f};
+  alignas(8) math::vec2<float> uvMax{1.0f, 1.0f};
+
+  // Offset 96
+  alignas(16) math::vec4<float> strokeColor{0.3f, 0.3f, 0.3f, 1.0f};
+
+  // Offset 112
+  alignas(4) uint32_t gradientType = 0;
+  alignas(4) float gradientDirection = 0.0f;
+  alignas(8) math::vec2<float> gradientCenter{
+      0.5f, 0.5f}; // Fits perfectly on 8-byte boundary [120-127]
+
+  // Offset 128
+  alignas(4) float gradientRadius = 0.5f;
+  alignas(4) uint32_t gradientStopOffset = 0;
+  alignas(4) uint32_t gradientStopCount = 0;
+  // alignas(4) uint32_t _inlineStopsFlag = 1;
+
+  // Offset 144 -> 160 PADDING (Forces your array to land exactly at 160)
+
+  // Offset 160 -> 288 (8 stops * 16 bytes)
+  // alignas(16) GradientStop gradientStops[8];
+  // INFO: GPU only data ends here
+
+  // ========================================================================
+  // CPU-ONLY ZONE BEGINS HERE (Offset 288)
+  // ========================================================================
 
   EdgeInsets margin;
   EdgeInsets padding;
@@ -109,31 +170,14 @@ struct styleConfig {
   FlexDirection flexDirection = FlexDirection::Column;
 
   math::vec4<float> textColor = math::vec4<float>{0, 0, 0, 1};
-  math::vec4<float> backgroundColor = math::vec4<float>::all(1);
-  CornerRadius radius;
-  ShapeType shape = ShapeType::RoundedRect;
-
-  float strokeWidth = 0.0f;
-  math::vec4<float> strokeColor{0.3f, 0.3f, 0.3f, 1.0f};
-  float dotGap = 0.0f;
-  float dotSize = 0.0f;
-  uint32_t strokePosition = 2;
 
   Overflow overflow = Overflow::Hidden;
 
-  GradientType gradientType = GradientType::None;
   std::vector<GradientStop> gradientStops;
 
   // INFO: Linear Gradient Direction in Radians
-  float gradientDirection = 0.0f;
-  float opacity = 1.0f;
-
-  math::vec4<float> clipRect{-10000.0f, -10000.0f, 100000.0f, 100000.0f};
 
   // Radial gradient
-  math::vec2<float> gradientCenter{0.5f, 0.5f};
-  float gradientRadius = 0.5f;
-
   ui::font::Font *font = nullptr;
   int fontSize = 16;
   ui::font::TextStyleBit styleFlag = ui::font::TextStyleBit::Regular;
@@ -144,7 +188,7 @@ struct styleConfig {
     pos = val;
     return *this;
   }
-  constexpr styleConfig &SetSize(const Size2D &val) {
+  constexpr styleConfig &SetSize(const math::vec2<float> &val) {
     size = val;
     return *this;
   }
@@ -166,7 +210,7 @@ struct styleConfig {
   }
 
   constexpr styleConfig &SetGradientType(const GradientType val) {
-    gradientType = val;
+    gradientType = static_cast<uint32_t>(val);
     return *this;
   }
   styleConfig &SetGradientStops(const std::vector<GradientStop> &stops) {
@@ -205,7 +249,7 @@ struct styleConfig {
     return *this;
   }
   constexpr styleConfig &SetShape(ShapeType val) {
-    shape = val;
+    shapeType = static_cast<uint32_t>(val);
     return *this;
   }
   constexpr styleConfig &SetOpacity(float opacity) {

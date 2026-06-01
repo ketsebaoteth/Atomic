@@ -1,23 +1,5 @@
 #version 450
 
-// struct UIInstance {
-//     vec2 pos;             // Offset 0
-//     vec2 size;            // Offset 8
-//     vec4 color;           // Offset 16
-//     vec4 radius;          // Offset 32
-//     uint shapeType;       // Offset 48
-//     float strokeWidth;    // Offset 52
-//     uint strokePosition;  // Offset 56 (0=Inner, 1=Center, 2=Outer)
-//     float dotGap;         // Offset 60
-//     float dotSize;        // Offset 64
-//
-//     uint textureIndex;    // Offset 68 -> Explicitly occupies the 4-byte alignment hole!
-//
-//     vec2 uvMin;           // Offset 72 -> Correctly aligned on an 8-byte boundary
-//     vec2 uvMax;           // Offset 80
-//     vec4 strokeColor;     // Offset 88
-// };
-
 struct GradientStop {
     vec4 color;
     float position;
@@ -42,7 +24,7 @@ struct UIInstance {
     float dotSize;
 
     uint textureIndex;
-    uint _padTex;
+    uint isRadialUniform;
 
     vec2 uvMin;
     vec2 uvMax;
@@ -59,10 +41,6 @@ struct UIInstance {
 
     uint gradientStopOffset;
     uint gradientStopCount;
-
-    uint isRadialUniform;
-
-    vec4 clipRect;
 };
 
 layout(std430, binding = 0) readonly buffer UIBuffer {

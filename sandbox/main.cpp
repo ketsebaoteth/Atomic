@@ -46,7 +46,7 @@ auto AnimatedBadge(const std::string &statusText, float interpolationFactor) {
       10.0f + (18.0f - 10.0f) * interpolationFactor;
 
   return Div(ui::styleConfig()
-                 .SetSize({ui::SizeFit{}, ui::SizeFit{}})
+                 .SetSize({fit, fit})
                  .SetBGColor(static_cast<math::vec4<float>>(ui::Color::gray800))
                  .SetPadding({6.0f, dynamicPaddingHorizontal, 6.0f,
                               dynamicPaddingHorizontal})
@@ -66,7 +66,7 @@ auto ShadcnSidebarRoute(const std::string &label, bool isActive) {
       isActive ? ui::Color::white : StylePreset::MutedText();
 
   return Div(ui::styleConfig()
-                 .SetSize({ui::SizeFill{}, ui::SizeFit{}})
+                 .SetSize({fill, fit})
                  .SetBGColor(static_cast<math::vec4<float>>(selectedColor))
                  .SetPadding({8.0f, 12.0f, 8.0f, 12.0f})
                  .SetRadius(CornerRadius::all(6.0f)),
@@ -110,7 +110,7 @@ auto ShadcnLogStreamRow(const std::string &timestamp, const std::string &msg,
                         ui::AtomicColor flagColor) {
   return Div(
       ui::styleConfig()
-          .SetSize({ui::SizeFill{}, ui::SizeFit{}})
+          .SetSize({fill, fit})
           .SetFlexDirection(FlexDirection::Row)
           .SetGap({6.0f, 0.0f}),
       Text(ui::styleConfig()
@@ -207,7 +207,7 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
                "ATOMIC_DSP"),
 
           Div(ui::styleConfig()
-                  .SetSize({ui::SizeFill{}, 1.0f})
+                  .SetSize({fill, 1.0f})
                   .SetBGColor(static_cast<math::vec4<float>>(border))),
 
           ShadcnSidebarRoute("System Status", true),
@@ -224,7 +224,7 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
 
           // Top Command Bar
           Div(ui::styleConfig()
-                  .SetSize({ui::SizeFill{}, ui::SizeFit{}})
+                  .SetSize({fill, fit})
                   .SetBGColor(static_cast<math::vec4<float>>(cardBg))
                   .SetPadding({12.0f, 16.0f, 12.0f, 16.0f})
                   .SetRadius(CornerRadius::all(8.0f))
@@ -239,7 +239,7 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
 
           // 3. Isolated Morphing Grid Row
           Div(ui::styleConfig()
-                  .SetSize({ui::SizeFill{}, ui::SizeFit{}})
+                  .SetSize({fill, fit})
                   .SetBGColor(
                       static_cast<math::vec4<float>>(ui::Color::transparent))
                   .SetFlexDirection(FlexDirection::Row)
@@ -256,7 +256,7 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
           // 4. Console Logs Window (Static Shell containing dynamic signal
           // flags)
           Div(ui::styleConfig()
-                  .SetSize({ui::SizeFill{}, ui::SizeFill{}})
+                  .SetSize({fill, fill})
                   .SetBGColor(static_cast<math::vec4<float>>(cardBg))
                   .SetPadding(EdgeInsets::all(16.0f))
                   .SetRadius(CornerRadius::all(8.0f))
@@ -270,7 +270,7 @@ auto BuildShowcaseCanvas(float globalWave, ui::AtomicColor liveAccent) {
                    "Live Hardware Virtualization Logs Console Stream:"),
 
               Div(ui::styleConfig()
-                      .SetSize({ui::SizeFill{}, 1.0f})
+                      .SetSize({fill, 1.0f})
                       .SetBGColor(static_cast<math::vec4<float>>(border))),
 
               ShadcnLogStreamRow("14:22:01",

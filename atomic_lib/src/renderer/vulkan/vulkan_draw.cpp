@@ -1,12 +1,12 @@
-#include "SDL3/SDL_video.h"
+// #include "SDL3/SDL_video.h"
 #include "renderer/font/freetype_layout.hpp"
 #include "renderer/font/interface.hpp"
 #include "renderer/style.hpp"
 #include "renderer/vulkan/vulkan_renderer.hpp"
-#include "windowing/interface.hpp"
+// #include "windowing/interface.hpp"
 #include <cstdint>
 #include <cstdio>
-#include <iostream>
+// #include <iostream>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -18,7 +18,7 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   if (!style)
     return;
 
-  UIInstance instance{};
+  UIInstance instance;
 
   // ---------------------------------
   // Base geometry
@@ -35,7 +35,7 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
 
   instance.radius = style->radius;
 
-  instance.shapeType = static_cast<uint32_t>(style->shape);
+  instance.shapeType = static_cast<uint32_t>(style->shapeType);
 
   // ---------------------------------
   // Stroke
@@ -62,7 +62,6 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   instance.uvMax = {1.0f, 1.0f};
 
   instance.opacity = style->opacity;
-  instance.clipRect = style->clipRect;
   instance.isRadialUniform = 1;
 
   // ---------------------------------
@@ -161,7 +160,6 @@ void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
 
     instance.strokeWidth = pg.fontWeightOffset;
     instance.opacity = style->opacity;
-    instance.clipRect = style->clipRect;
 
     // IMPORTANT: font is NOT stored in UIInstance
     // font only affects glyph generation
@@ -169,65 +167,6 @@ void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
     m_ui_queue.push_back(instance);
   }
 }
-// void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
-//                               const std::string &text,
-//                               const ui::styleConfig *style, float dpiScale) {
-//   if (!style) {
-//     printf("no font so not rendering");
-//     return;
-//   }
-//
-//   ui::font::Font *activeFont = style->font
-//                                    ? static_cast<ui::font::Font
-//                                    *>(style->font) : m_default_font.get();
-//
-//   if (!activeFont) {
-//     std::cerr << "Renderer Warning: Dropping text draw call due to missing "
-//                  "Font asset."
-//               << std::endl;
-//     return;
-//   }
-//
-//   // Pure single-source-of-truth configuration pass passed explicitly from
-//   // SDLWindow
-//   float physicalFontSize = style->fontSize * dpiScale;
-//   float physicalMaxWidth = style->maxWidth * dpiScale;
-//   float physicalTracking = style->tracking * dpiScale;
-//
-//   std::vector<font::TextRun> runs = font::TextLayoutEngine::parseRichText(
-//       text, physicalFontSize, style->backgroundColor);
-//
-//   if (!runs.empty()) {
-//     runs[0].styleFlags = static_cast<uint8_t>(style->styleFlag);
-//   }
-//
-//   std::vector<ui::font::PositionedGlyph> positionedGlyphs =
-//       font::TextLayoutEngine::calcLayout(runs, activeFont, physicalMaxWidth,
-//                                          physicalTracking);
-//
-//   // NOTE: If getAscender() inside your freetype_font layer already reflects
-//   the
-//   // internal FreeType face metrics scaled by physicalFontSize, do not
-//   multiply
-//   // by dpiScale again.
-//   float fontAscender = activeFont->getAscender(physicalFontSize);
-//
-//   for (const auto &pg : positionedGlyphs) {
-//     UIInstance instance{};
-//     instance.pos = {globalPosition.x + pg.rect.x,
-//                     globalPosition.y + fontAscender + pg.rect.y};
-//     instance.size = {pg.rect.z, pg.rect.w};
-//     instance.color = pg.color;
-//
-//     instance.shapeType = 2; // SHAPE_TEXT
-//     instance.uvMin = {pg.uv.x, pg.uv.y};
-//     instance.uvMax = {pg.uv.z, pg.uv.w};
-//
-//     instance.strokeWidth = pg.fontWeightOffset;
-//
-//     m_ui_queue.push_back(instance);
-//   }
-// }
 
 void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
                                const math::vec2<float> &computedSize,
@@ -256,9 +195,6 @@ void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
   instance.dotGap = style ? style->dotGap : 0.0f;
   instance.dotSize = style ? style->dotSize : 0.0f;
   instance.opacity = style ? style->opacity : 1.0f;
-  instance.clipRect =
-      style ? style->clipRect
-            : math::vec4<float>{-10000.0f, -10000.0f, 100000.0f, 100000.0f};
 
   m_ui_queue.push_back(instance);
 }

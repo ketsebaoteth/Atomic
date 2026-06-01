@@ -29,30 +29,6 @@ struct GradientStopGPU {
   alignas(4) float _pad2 = 0.0f;
 };
 
-struct UIInstance {
-  alignas(8) math::vec2<float> pos;
-  alignas(8) math::vec2<float> size;
-  alignas(16) math::vec4<float> backgroundColor;
-  alignas(16) math::vec4<float> radius;
-  alignas(4) float opacity;
-  alignas(4) uint32_t shapeType;
-  alignas(4) float strokeWidth;
-  alignas(4) uint32_t strokePosition;
-  alignas(4) float dotGap;
-  alignas(4) float dotSize;
-  alignas(4) uint32_t textureIndex;
-  alignas(4) uint32_t isRadialUniform = 1;
-  alignas(8) math::vec2<float> uvMin;
-  alignas(8) math::vec2<float> uvMax;
-  alignas(16) math::vec4<float> strokeColor;
-  alignas(4) uint32_t gradientType;
-  alignas(4) float gradientDirection;
-  alignas(8) math::vec2<float> gradientCenter;
-  alignas(4) float gradientRadius;
-  alignas(4) uint32_t gradientStopOffset;
-  alignas(4) uint32_t gradientStopCount;
-};
-
 class VulkanRenderer : public Renderer {
 public:
   static std::unique_ptr<Renderer> Create(class Window *window) {

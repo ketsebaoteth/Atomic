@@ -21,6 +21,9 @@ enum class GradientDirectionUnit : uint8_t { Rad = 0, Deg };
 struct GradientStop {
   float position; // 0.0 - 1.0
   math::vec4<float> color;
+  float _pad0;
+  float _pad1;
+  float _pad2;
 };
 
 enum class FlexDirection : uint32_t { Column = 0, Row = 1 };
@@ -153,7 +156,6 @@ struct styleConfig {
 
   // Offset 144 -> 160 PADDING (Forces your array to land exactly at 160)
 
-  static constexpr size_t GPU_INSTANCE_SIZE = 160;
   // Offset 160 -> 288 (8 stops * 16 bytes)
   // alignas(16) GradientStop gradientStops[8];
   // INFO: GPU only data ends here
@@ -208,7 +210,7 @@ struct styleConfig {
   }
 
   constexpr styleConfig &SetGradientType(const GradientType val) {
-    gradientType = static_cast<float>(val);
+    gradientType = static_cast<uint32_t>(val);
     return *this;
   }
   styleConfig &SetGradientStops(const std::vector<GradientStop> &stops) {

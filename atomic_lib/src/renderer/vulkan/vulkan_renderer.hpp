@@ -30,74 +30,27 @@ struct GradientStopGPU {
 };
 
 struct UIInstance {
-  // ---------------------------------
-  // Base geometry
-  // ---------------------------------
-
   alignas(8) math::vec2<float> pos;
   alignas(8) math::vec2<float> size;
-
-  // ---------------------------------
-  // Fill / shape
-  // ---------------------------------
-
   alignas(16) math::vec4<float> backgroundColor;
   alignas(16) math::vec4<float> radius;
-
   alignas(4) float opacity;
   alignas(4) uint32_t shapeType;
-
-  // ---------------------------------
-  // Stroke
-  // ---------------------------------
-
   alignas(4) float strokeWidth;
   alignas(4) uint32_t strokePosition;
   alignas(4) float dotGap;
   alignas(4) float dotSize;
-
-  // ---------------------------------
-  // Texture
-  // ---------------------------------
-
   alignas(4) uint32_t textureIndex;
-
-  // occupies alignment gap
-  alignas(4) uint32_t _padTex = 0;
-
+  alignas(4) uint32_t isRadialUniform = 1;
   alignas(8) math::vec2<float> uvMin;
   alignas(8) math::vec2<float> uvMax;
-
-  // ---------------------------------
-  // Stroke color
-  // ---------------------------------
-
   alignas(16) math::vec4<float> strokeColor;
-
-  // ---------------------------------
-  // Gradient
-  // ---------------------------------
-
   alignas(4) uint32_t gradientType;
-
-  // radians
   alignas(4) float gradientDirection;
-
   alignas(8) math::vec2<float> gradientCenter;
-
   alignas(4) float gradientRadius;
-
-  // Offset into global gradient stop SSBO
   alignas(4) uint32_t gradientStopOffset;
-
-  // Number of stops
   alignas(4) uint32_t gradientStopCount;
-
-  // std430 alignment padding
-  alignas(4) uint32_t isRadialUniform = 1;
-
-  // Bounds Clip passing
-  alignas(16) math::vec4<float> clipRect;
 };
 
 class VulkanRenderer : public Renderer {

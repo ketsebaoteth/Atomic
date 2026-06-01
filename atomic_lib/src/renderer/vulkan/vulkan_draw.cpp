@@ -18,7 +18,7 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   if (!style)
     return;
 
-  UIInstance instance{};
+  UIInstance instance;
 
   // ---------------------------------
   // Base geometry
@@ -35,7 +35,7 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
 
   instance.radius = style->radius;
 
-  instance.shapeType = static_cast<uint32_t>(style->shape);
+  instance.shapeType = static_cast<uint32_t>(style->shapeType);
 
   // ---------------------------------
   // Stroke
@@ -62,7 +62,6 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   instance.uvMax = {1.0f, 1.0f};
 
   instance.opacity = style->opacity;
-  instance.clipRect = style->clipRect;
   instance.isRadialUniform = 1;
 
   // ---------------------------------
@@ -161,7 +160,6 @@ void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
 
     instance.strokeWidth = pg.fontWeightOffset;
     instance.opacity = style->opacity;
-    instance.clipRect = style->clipRect;
 
     // IMPORTANT: font is NOT stored in UIInstance
     // font only affects glyph generation
@@ -256,9 +254,6 @@ void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
   instance.dotGap = style ? style->dotGap : 0.0f;
   instance.dotSize = style ? style->dotSize : 0.0f;
   instance.opacity = style ? style->opacity : 1.0f;
-  instance.clipRect =
-      style ? style->clipRect
-            : math::vec4<float>{-10000.0f, -10000.0f, 100000.0f, 100000.0f};
 
   m_ui_queue.push_back(instance);
 }

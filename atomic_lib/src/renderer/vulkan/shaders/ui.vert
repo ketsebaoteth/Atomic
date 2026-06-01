@@ -42,7 +42,7 @@ struct UIInstance {
     float dotSize;
 
     uint textureIndex;
-    uint _padTex;
+    uint isRadialUniform;
 
     vec2 uvMin;
     vec2 uvMax;
@@ -59,10 +59,6 @@ struct UIInstance {
 
     uint gradientStopOffset;
     uint gradientStopCount;
-
-    uint isRadialUniform;
-
-    vec4 clipRect;
 };
 
 layout(std430, binding = 0) readonly buffer UIBuffer {

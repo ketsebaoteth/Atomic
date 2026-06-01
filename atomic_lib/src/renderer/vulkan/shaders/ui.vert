@@ -60,8 +60,8 @@ struct UIInstance {
     uint gradientStopOffset;
     uint gradientStopCount;
 
-    uint _padGradient;
-    
+    uint isRadialUniform;
+
     vec4 clipRect;
 };
 
@@ -95,7 +95,7 @@ layout(location = 16) out float outGradientRadius;
 layout(location = 17) flat out uint outGradientStopOffset;
 layout(location = 18) flat out uint outGradientStopCount;
 layout(location = 19) out float outOpacity;
-layout(location = 20) flat out vec4 outClipRect;
+layout(location = 20) flat out uint outIsRadialUniform;
 
 const vec2 positions[6] = vec2[](
     vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0),
@@ -137,7 +137,7 @@ void main() {
     outGradientRadius     = data.gradientRadius;
     outGradientStopOffset = data.gradientStopOffset;
     outGradientStopCount  = data.gradientStopCount;
-    outClipRect           = data.clipRect;
+    outIsRadialUniform    = data.isRadialUniform;
 
     vec2 normalizedPos = screenPos / globals.resolution;
     gl_Position = vec4(normalizedPos * 2.0 - 1.0, 0.0, 1.0);

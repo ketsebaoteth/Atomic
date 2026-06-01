@@ -109,7 +109,7 @@ private:
   VkShaderModule createShaderModule(const std::vector<char> &code);
 
   class Window *m_window;
-  std::vector<styleConfig::GPUBufferType> m_ui_queue;
+  std::vector<styleConfig::StyleConfigGPU> m_ui_queue;
   std::vector<GradientStopGPU> m_gradientStops;
   VkBuffer m_storageBuffer;
   VkDeviceMemory m_storageBufferMemory;

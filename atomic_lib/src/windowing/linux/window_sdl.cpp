@@ -76,8 +76,8 @@ void SDLWindow::render() {
 
     // We pass logical sizes here because ExecSizingPass multiplies them by
     // dpiScale internally!
-    rootStyle.GPUBuffer.size.x = static_cast<float>(logicalW);
-    rootStyle.GPUBuffer.size.y = static_cast<float>(logicalH);
+    rootStyle.styleConfigGPU.size.x = static_cast<float>(logicalW);
+    rootStyle.styleConfigGPU.size.y = static_cast<float>(logicalH);
 
     // 2. Run the processing passes with absolute physical pixel targets
     math::vec2<float> surfaceDimensions{static_cast<float>(drawableW),

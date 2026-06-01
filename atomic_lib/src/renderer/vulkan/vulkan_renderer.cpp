@@ -745,9 +745,10 @@ void VulkanRenderer::render_batch() {
   // --- CORE HOST DATA STORAGE STREAM AND DRAW COMMAND SEQUENCE ---
   void *data;
   vkMapMemory(m_device, m_storageBufferMemory, 0,
-              m_ui_queue.size() * sizeof(styleConfig::GPUBufferType), 0, &data);
+              m_ui_queue.size() * sizeof(styleConfig::StyleConfigGPU), 0,
+              &data);
   memcpy(data, m_ui_queue.data(),
-         m_ui_queue.size() * sizeof(styleConfig::GPUBufferType));
+         m_ui_queue.size() * sizeof(styleConfig::StyleConfigGPU));
   vkUnmapMemory(m_device, m_storageBufferMemory);
 
   if (!m_gradientStops.empty()) {
@@ -791,7 +792,7 @@ void VulkanRenderer::render_batch() {
 
 void VulkanRenderer::create_storage_buffer() {
   VkDeviceSize bufferSize =
-      sizeof(styleConfig::GPUBufferType) * 10000; // Room for 10k rects
+      sizeof(styleConfig::StyleConfigGPU) * 10000; // Room for 10k rects
 
   VkBufferCreateInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
   bufferInfo.size = bufferSize;

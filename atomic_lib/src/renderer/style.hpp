@@ -105,8 +105,6 @@ struct CornerRadius {
   }
 };
 
-constexpr size_t GPU_INSTANCE_SIZE = 144;
-
 struct styleConfig {
   // ========================================================================
   // GPU-MAPPED BLIT ZONE (Exact byte alignment matching your std430 shader)
@@ -114,7 +112,7 @@ struct styleConfig {
 
   // INFO: GPU only data starts here
   // Offset 0
-  struct GPUBufferType {
+  struct StyleConfigGPU {
     alignas(8) math::vec2<float> pos{0.0f, 0.0f};
     alignas(8) math::vec2<float> size{fit, fit};
 
@@ -134,7 +132,7 @@ struct styleConfig {
     alignas(4) float dotGap = 0.0f;
     alignas(4) float dotSize = 0.0f;
     alignas(4) uint32_t textureIndex = 0;
-    alignas(4) uint32_t isRadialUniform = 1;
+    alignas(4) uint32_t isRadialUniform = true;
 
     // Offset 80
     alignas(8) math::vec2<float> uvMin{0.0f, 0.0f};
@@ -153,13 +151,8 @@ struct styleConfig {
     alignas(4) float gradientRadius = 0.5f;
     alignas(4) uint32_t gradientStopOffset = 0;
     alignas(4) uint32_t gradientStopCount = 0;
-  } GPUBuffer;
-  // alignas(4) uint32_t _inlineStopsFlag = 1;
+  } styleConfigGPU;
 
-  // Offset 144 -> 160 PADDING (Forces your array to land exactly at 160)
-
-  // Offset 160 -> 288 (8 stops * 16 bytes)
-  // alignas(16) GradientStop gradientStops[8];
   // INFO: GPU only data ends here
 
   // ========================================================================
@@ -180,18 +173,18 @@ struct styleConfig {
   // INFO: Linear Gradient Direction in Radians
 
   // Radial gradient
-  ui::font::Font *font = nullptr;
+  ui::font::Font *font;
   int fontSize = 16;
   ui::font::TextStyleBit styleFlag = ui::font::TextStyleBit::Regular;
   int tracking = 0;
   int maxWidth = 0;
 
   constexpr styleConfig &SetPos(const math::vec2<float> &val) {
-    GPUBuffer.pos = val;
+    styleConfigGPU.pos = val;
     return *this;
   }
   constexpr styleConfig &SetSize(const math::vec2<float> &val) {
-    GPUBuffer.size = val;
+    styleConfigGPU.size = val;
     return *this;
   }
   constexpr styleConfig &SetMargin(const EdgeInsets &val) {
@@ -212,7 +205,7 @@ struct styleConfig {
   }
 
   constexpr styleConfig &SetGradientType(const GradientType val) {
-    GPUBuffer.gradientType = static_cast<uint32_t>(val);
+    styleConfigGPU.gradientType = static_cast<uint32_t>(val);
     return *this;
   }
   styleConfig &SetGradientStops(const std::vector<GradientStop> &stops) {
@@ -220,7 +213,7 @@ struct styleConfig {
     return *this;
   }
   constexpr styleConfig &SetGradientRadius(const float radius) {
-    GPUBuffer.gradientRadius = radius;
+    styleConfigGPU.gradientRadius = radius;
     return *this;
   }
 
@@ -229,16 +222,22 @@ struct styleConfig {
       const GradientDirectionUnit unit = GradientDirectionUnit::Rad) {
 
     if (unit == GradientDirectionUnit::Deg) {
-      GPUBuffer.gradientDirection = angle * (3.14159265358979323846f / 180.0f);
+      styleConfigGPU.gradientDirection =
+          angle * (3.14159265358979323846f / 180.0f);
     } else {
-      GPUBuffer.gradientDirection = angle;
+      styleConfigGPU.gradientDirection = angle;
     }
 
     return *this;
   }
 
   constexpr styleConfig &SetRadialGradCenter(const math::vec2<float> &center) {
-    GPUBuffer.gradientCenter = center;
+    styleConfigGPU.gradientCenter = center;
+    return *this;
+  }
+
+  constexpr styleConfig &SetRadialUniform(const bool isUniform) {
+    styleConfigGPU.isRadialUniform = isUniform;
     return *this;
   }
 
@@ -247,19 +246,19 @@ struct styleConfig {
     return *this;
   }
   constexpr styleConfig &SetBGColor(const math::vec4<float> &val) {
-    GPUBuffer.backgroundColor = val;
+    styleConfigGPU.backgroundColor = val;
     return *this;
   }
   constexpr styleConfig &SetRadius(const CornerRadius &val) {
-    GPUBuffer.radius = val;
+    styleConfigGPU.radius = val;
     return *this;
   }
   constexpr styleConfig &SetShape(ShapeType val) {
-    GPUBuffer.shapeType = static_cast<uint32_t>(val);
+    styleConfigGPU.shapeType = static_cast<uint32_t>(val);
     return *this;
   }
   constexpr styleConfig &SetOpacity(float opacity) {
-    GPUBuffer.opacity = opacity;
+    styleConfigGPU.opacity = opacity;
     return *this;
   }
   constexpr styleConfig &SetOverflow(Overflow val) {
@@ -268,28 +267,28 @@ struct styleConfig {
   }
 
   constexpr styleConfig &SetStrokeWidth(float val) {
-    GPUBuffer.strokeWidth = val;
+    styleConfigGPU.strokeWidth = val;
     return *this;
   }
   constexpr styleConfig &SetStrokeColor(const math::vec4<float> &val) {
-    GPUBuffer.strokeColor = val;
+    styleConfigGPU.strokeColor = val;
     return *this;
   }
   constexpr styleConfig &SetDotGap(float val) {
-    GPUBuffer.dotGap = val;
+    styleConfigGPU.dotGap = val;
     return *this;
   }
   constexpr styleConfig &SetDotSize(float val) {
-    GPUBuffer.dotSize = val;
+    styleConfigGPU.dotSize = val;
     return *this;
   }
   constexpr styleConfig &SetStrokePosition(uint32_t val) {
-    GPUBuffer.strokePosition = val;
+    styleConfigGPU.strokePosition = val;
     return *this;
   }
 
-  constexpr styleConfig &SetFont(ui::font::Font *val) {
-    font = val;
+  styleConfig &SetFont(ui::font::Font *fontName) {
+    font = fontName;
     return *this;
   }
   constexpr styleConfig &SetFontSize(int val) {

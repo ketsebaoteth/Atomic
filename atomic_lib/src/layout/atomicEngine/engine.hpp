@@ -25,7 +25,8 @@ public:
 
     ExecSizingPass(rootNode, canvasBounds);
 
-    math::vec2<float> rootStartingPosition = rootNode->GetStyle().GPUBuffer.pos;
+    math::vec2<float> rootStartingPosition =
+        rootNode->GetStyle().styleConfigGPU.pos;
     ExecPositionPass(rootNode, rootStartingPosition);
 
     m_linearizedRenderCache.clear();
@@ -48,7 +49,7 @@ private:
     const ui::styleConfig &style = node->GetStyle();
     LayoutAccumulation &metrics = node->GetLayoutMetrics();
 
-    const styleConfig::GPUBufferType style_ = style.GPUBuffer;
+    const styleConfig::StyleConfigGPU style_ = style.styleConfigGPU;
     // Leaf nodes (Text layout evaluation)
     // Leaf nodes (Text layout evaluation)
     if (node->GetType() == ElementType::TEXT) {
@@ -103,7 +104,7 @@ private:
     // PASS 1A: Pre-Pass (Resolve SizeFit nodes first)
     // =================================================================
     for (const auto &child : node->GetChildren()) {
-      const auto &childStyle = child->GetStyle().GPUBuffer;
+      const auto &childStyle = child->GetStyle().styleConfigGPU;
       const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
 
       if (mainSize == ui::fit) {
@@ -120,8 +121,8 @@ private:
 
     for (const auto &child : node->GetChildren()) {
       const auto &childStyle = child->GetStyle();
-      const auto &mainSize =
-          isRow ? childStyle.GPUBuffer.size.x : childStyle.GPUBuffer.size.y;
+      const auto &mainSize = isRow ? childStyle.styleConfigGPU.size.x
+                                   : childStyle.styleConfigGPU.size.y;
 
       // Scale up margins dynamically
       float marginTotal =
@@ -158,7 +159,7 @@ private:
     // PASS 2 & 3: Budget Determination & Deep Child Recursion
     // =================================================================
     for (const auto &child : node->GetChildren()) {
-      const auto &childStyle = child->GetStyle().GPUBuffer;
+      const auto &childStyle = child->GetStyle().styleConfigGPU;
       const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
 
       if (mainSize == ui::fit)

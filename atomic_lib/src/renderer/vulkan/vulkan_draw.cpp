@@ -18,7 +18,7 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   if (!style)
     return;
 
-  styleConfig::GPUBufferType instance = style->GPUBuffer;
+  styleConfig::StyleConfigGPU instance = style->styleConfigGPU;
 
   // ---------------------------------
   // Base geometry
@@ -62,7 +62,7 @@ void VulkanRenderer::add_circle(const math::vec2<float> &globalPosition,
   if (!style)
     return;
 
-  style->GPUBuffer.radius = {radius, radius, radius, radius};
+  style->styleConfigGPU.radius = {radius, radius, radius, radius};
   math::vec2<float> diameterSize{radius * 2.0f, radius * 2.0f};
 
   add_rect(globalPosition, diameterSize, style);
@@ -101,7 +101,7 @@ void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
   float fontAscender = activeFont->getAscender(physicalFontSize);
 
   for (const auto &pg : positionedGlyphs) {
-    styleConfig::GPUBufferType instance = style->GPUBuffer;
+    styleConfig::StyleConfigGPU instance = style->styleConfigGPU;
 
     instance.pos = {globalPosition.x + pg.rect.x,
                     globalPosition.y + fontAscender + pg.rect.y};
@@ -131,7 +131,7 @@ void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
                                const ui::styleConfig *style) {
   uint32_t textureId = get_or_create_texture(path);
 
-  styleConfig::GPUBufferType instance = style->GPUBuffer;
+  styleConfig::StyleConfigGPU instance = style->styleConfigGPU;
   instance.pos = globalPosition;
   instance.size = computedSize;
 

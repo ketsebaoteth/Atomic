@@ -164,7 +164,7 @@ auto GradientTestUI() {
               .SetSize({fill, 160.0f})
               .SetGradientType(GradientType::Radial)
               .SetRadialGradCenter({0.5f, 0.5f})
-              .SetGradientStops({{0.0f, {0, 0, 0, 1}}, {3, {1, 1, 1, 1}}})
+              .SetGradientStops({{0.0f, {0, 0, 0, 1}}, {1, {1, 1, 1, 1}}})
               .SetRadius(CornerRadius::all(16.0f))
               .SetOpacity(0.9f),
 

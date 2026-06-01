@@ -105,7 +105,7 @@ struct CornerRadius {
   }
 };
 
-constexpr size_t GPU_INSTANCE_SIZE = 416;
+constexpr size_t GPU_INSTANCE_SIZE = 144;
 
 struct styleConfig {
   // ========================================================================
@@ -114,44 +114,46 @@ struct styleConfig {
 
   // INFO: GPU only data starts here
   // Offset 0
-  alignas(8) math::vec2<float> pos{0.0f, 0.0f};
-  alignas(8) math::vec2<float> size{fit, fit};
+  struct GPUBufferType {
+    alignas(8) math::vec2<float> pos{0.0f, 0.0f};
+    alignas(8) math::vec2<float> size{fit, fit};
 
-  // Offset 16
-  alignas(16) math::vec4<float> backgroundColor = math::vec4<float>::all(1);
+    // Offset 16
+    alignas(16) math::vec4<float> backgroundColor = math::vec4<float>::all(1);
 
-  // Offset 32
-  alignas(16) math::vec4<float> radius;
+    // Offset 32
+    alignas(16) math::vec4<float> radius;
 
-  // Offset 48
-  alignas(4) float opacity = 1.0f;
-  alignas(4) uint32_t shapeType = 0;
-  alignas(4) float strokeWidth = 0.0f;
-  alignas(4) uint32_t strokePosition = 2;
+    // Offset 48
+    alignas(4) float opacity = 1.0f;
+    alignas(4) uint32_t shapeType = 0;
+    alignas(4) float strokeWidth = 0.0f;
+    alignas(4) uint32_t strokePosition = 2;
 
-  // Offset 64
-  alignas(4) float dotGap = 0.0f;
-  alignas(4) float dotSize = 0.0f;
-  alignas(4) uint32_t textureIndex = 0;
-  alignas(4) uint32_t isRadialUniform = 1;
+    // Offset 64
+    alignas(4) float dotGap = 0.0f;
+    alignas(4) float dotSize = 0.0f;
+    alignas(4) uint32_t textureIndex = 0;
+    alignas(4) uint32_t isRadialUniform = 1;
 
-  // Offset 80
-  alignas(8) math::vec2<float> uvMin{0.0f, 0.0f};
-  alignas(8) math::vec2<float> uvMax{1.0f, 1.0f};
+    // Offset 80
+    alignas(8) math::vec2<float> uvMin{0.0f, 0.0f};
+    alignas(8) math::vec2<float> uvMax{1.0f, 1.0f};
 
-  // Offset 96
-  alignas(16) math::vec4<float> strokeColor{0.3f, 0.3f, 0.3f, 1.0f};
+    // Offset 96
+    alignas(16) math::vec4<float> strokeColor{0.3f, 0.3f, 0.3f, 1.0f};
 
-  // Offset 112
-  alignas(4) uint32_t gradientType = 0;
-  alignas(4) float gradientDirection = 0.0f;
-  alignas(8) math::vec2<float> gradientCenter{
-      0.5f, 0.5f}; // Fits perfectly on 8-byte boundary [120-127]
+    // Offset 112
+    alignas(4) uint32_t gradientType = 0;
+    alignas(4) float gradientDirection = 0.0f;
+    alignas(8) math::vec2<float> gradientCenter{
+        0.5f, 0.5f}; // Fits perfectly on 8-byte boundary [120-127]
 
-  // Offset 128
-  alignas(4) float gradientRadius = 0.5f;
-  alignas(4) uint32_t gradientStopOffset = 0;
-  alignas(4) uint32_t gradientStopCount = 0;
+    // Offset 128
+    alignas(4) float gradientRadius = 0.5f;
+    alignas(4) uint32_t gradientStopOffset = 0;
+    alignas(4) uint32_t gradientStopCount = 0;
+  } GPUBuffer;
   // alignas(4) uint32_t _inlineStopsFlag = 1;
 
   // Offset 144 -> 160 PADDING (Forces your array to land exactly at 160)
@@ -185,11 +187,11 @@ struct styleConfig {
   int maxWidth = 0;
 
   constexpr styleConfig &SetPos(const math::vec2<float> &val) {
-    pos = val;
+    GPUBuffer.pos = val;
     return *this;
   }
   constexpr styleConfig &SetSize(const math::vec2<float> &val) {
-    size = val;
+    GPUBuffer.size = val;
     return *this;
   }
   constexpr styleConfig &SetMargin(const EdgeInsets &val) {
@@ -210,11 +212,15 @@ struct styleConfig {
   }
 
   constexpr styleConfig &SetGradientType(const GradientType val) {
-    gradientType = static_cast<uint32_t>(val);
+    GPUBuffer.gradientType = static_cast<uint32_t>(val);
     return *this;
   }
   styleConfig &SetGradientStops(const std::vector<GradientStop> &stops) {
     gradientStops = stops;
+    return *this;
+  }
+  constexpr styleConfig &SetGradientRadius(const float radius) {
+    GPUBuffer.gradientRadius = radius;
     return *this;
   }
 
@@ -223,16 +229,16 @@ struct styleConfig {
       const GradientDirectionUnit unit = GradientDirectionUnit::Rad) {
 
     if (unit == GradientDirectionUnit::Deg) {
-      gradientDirection = angle * (3.14159265358979323846f / 180.0f);
+      GPUBuffer.gradientDirection = angle * (3.14159265358979323846f / 180.0f);
     } else {
-      gradientDirection = angle;
+      GPUBuffer.gradientDirection = angle;
     }
 
     return *this;
   }
 
   constexpr styleConfig &SetRadialGradCenter(const math::vec2<float> &center) {
-    gradientCenter = center;
+    GPUBuffer.gradientCenter = center;
     return *this;
   }
 
@@ -241,19 +247,19 @@ struct styleConfig {
     return *this;
   }
   constexpr styleConfig &SetBGColor(const math::vec4<float> &val) {
-    backgroundColor = val;
+    GPUBuffer.backgroundColor = val;
     return *this;
   }
   constexpr styleConfig &SetRadius(const CornerRadius &val) {
-    radius = val;
+    GPUBuffer.radius = val;
     return *this;
   }
   constexpr styleConfig &SetShape(ShapeType val) {
-    shapeType = static_cast<uint32_t>(val);
+    GPUBuffer.shapeType = static_cast<uint32_t>(val);
     return *this;
   }
   constexpr styleConfig &SetOpacity(float opacity) {
-    this->opacity = opacity;
+    GPUBuffer.opacity = opacity;
     return *this;
   }
   constexpr styleConfig &SetOverflow(Overflow val) {
@@ -262,23 +268,23 @@ struct styleConfig {
   }
 
   constexpr styleConfig &SetStrokeWidth(float val) {
-    strokeWidth = val;
+    GPUBuffer.strokeWidth = val;
     return *this;
   }
   constexpr styleConfig &SetStrokeColor(const math::vec4<float> &val) {
-    strokeColor = val;
+    GPUBuffer.strokeColor = val;
     return *this;
   }
   constexpr styleConfig &SetDotGap(float val) {
-    dotGap = val;
+    GPUBuffer.dotGap = val;
     return *this;
   }
   constexpr styleConfig &SetDotSize(float val) {
-    dotSize = val;
+    GPUBuffer.dotSize = val;
     return *this;
   }
   constexpr styleConfig &SetStrokePosition(uint32_t val) {
-    strokePosition = val;
+    GPUBuffer.strokePosition = val;
     return *this;
   }
 

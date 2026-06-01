@@ -1,6 +1,7 @@
 #include "vulkan_renderer.hpp"
 #include "math/vec.hpp"
 #include "renderer/font/freetype_font.hpp"
+#include "renderer/style.hpp"
 #include "renderer/vulkan/vulkan_shader.hpp"
 #include "windowing/interface.hpp"
 #include <SDL3/SDL_video.h>
@@ -744,8 +745,9 @@ void VulkanRenderer::render_batch() {
   // --- CORE HOST DATA STORAGE STREAM AND DRAW COMMAND SEQUENCE ---
   void *data;
   vkMapMemory(m_device, m_storageBufferMemory, 0,
-              m_ui_queue.size() * sizeof(UIInstance), 0, &data);
-  memcpy(data, m_ui_queue.data(), m_ui_queue.size() * sizeof(UIInstance));
+              m_ui_queue.size() * sizeof(styleConfig::GPUBufferType), 0, &data);
+  memcpy(data, m_ui_queue.data(),
+         m_ui_queue.size() * sizeof(styleConfig::GPUBufferType));
   vkUnmapMemory(m_device, m_storageBufferMemory);
 
   if (!m_gradientStops.empty()) {
@@ -788,7 +790,8 @@ void VulkanRenderer::render_batch() {
 }
 
 void VulkanRenderer::create_storage_buffer() {
-  VkDeviceSize bufferSize = sizeof(UIInstance) * 10000; // Room for 10k rects
+  VkDeviceSize bufferSize =
+      sizeof(styleConfig::GPUBufferType) * 10000; // Room for 10k rects
 
   VkBufferCreateInfo bufferInfo{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
   bufferInfo.size = bufferSize;

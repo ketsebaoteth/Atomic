@@ -18,7 +18,7 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   if (!style)
     return;
 
-  UIInstance instance;
+  styleConfig::GPUBufferType instance = style->GPUBuffer;
 
   // ---------------------------------
   // Base geometry
@@ -31,55 +31,60 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
   // Fill / shape
   // ---------------------------------
 
-  instance.backgroundColor = style->backgroundColor;
-
-  instance.radius = style->radius;
-
-  instance.shapeType = static_cast<uint32_t>(style->shapeType);
+  // instance.backgroundColor = style->backgroundColor;
+  //
+  // instance.radius = style->radius;
+  //
+  // instance.shapeType = static_cast<uint32_t>(style->shapeType);
 
   // ---------------------------------
   // Stroke
   // ---------------------------------
 
-  instance.strokeWidth = style->strokeWidth;
-
-  instance.strokeColor = style->strokeColor;
-
-  instance.strokePosition = style->strokePosition;
-
-  instance.dotGap = style->dotGap;
-
-  instance.dotSize = style->dotSize;
-
+  // instance.strokeWidth = style->strokeWidth;
+  //
+  // instance.strokeColor = style->strokeColor;
+  //
+  // instance.strokePosition = style->strokePosition;
+  //
+  // instance.dotGap = style->dotGap;
+  //
+  // instance.dotSize = style->dotSize;
+  //
   // ---------------------------------
   // Texture defaults
   // ---------------------------------
 
-  instance.textureIndex = 0;
-
-  instance.uvMin = {0.0f, 0.0f};
-
-  instance.uvMax = {1.0f, 1.0f};
-
-  instance.opacity = style->opacity;
-  instance.isRadialUniform = 1;
+  // instance.textureIndex = 0;
+  //
+  // instance.uvMin = {0.0f, 0.0f};
+  //
+  // instance.uvMax = {1.0f, 1.0f};
+  //
+  // instance.opacity = style->opacity;
+  // instance.isRadialUniform = 1;
 
   // ---------------------------------
   // Gradient
   // ---------------------------------
 
-  instance.gradientType = static_cast<uint32_t>(style->gradientType);
-
-  instance.gradientDirection = style->gradientDirection;
-
-  instance.gradientCenter = style->gradientCenter;
-
-  instance.gradientRadius = style->gradientRadius;
-
-  // Store offset BEFORE append
-  instance.gradientStopOffset = static_cast<uint32_t>(m_gradientStops.size());
-
+  // instance.gradientType = static_cast<uint32_t>(style->gradientType);
+  //
+  // instance.gradientDirection = style->gradientDirection;
+  //
+  // instance.gradientCenter = style->gradientCenter;
+  //
+  // instance.gradientRadius = style->gradientRadius;
+  //
+  // // Store offset BEFORE append
+  // instance.gradientStopOffset =
+  // static_cast<uint32_t>(m_gradientStops.size());
   instance.gradientStopCount =
+      static_cast<uint32_t>(style->gradientStops.size());
+
+  uint32_t offset = static_cast<uint32_t>(m_gradientStops.size());
+
+  instance.gradientStopOffset =
       static_cast<uint32_t>(style->gradientStops.size());
 
   // Append stops into global GPU buffer
@@ -93,6 +98,10 @@ void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
     m_gradientStops.push_back(gpuStop);
   }
 
+  instance.gradientStopOffset = offset;
+  instance.gradientStopCount =
+      static_cast<uint32_t>(style->gradientStops.size());
+
   // ---------------------------------
   // Queue draw instance
   // ---------------------------------
@@ -105,7 +114,7 @@ void VulkanRenderer::add_circle(const math::vec2<float> &globalPosition,
   if (!style)
     return;
 
-  style->radius = {radius, radius, radius, radius};
+  style->GPUBuffer.radius = {radius, radius, radius, radius};
   math::vec2<float> diameterSize{radius * 2.0f, radius * 2.0f};
 
   add_rect(globalPosition, diameterSize, style);
@@ -144,7 +153,7 @@ void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
   float fontAscender = activeFont->getAscender(physicalFontSize);
 
   for (const auto &pg : positionedGlyphs) {
-    UIInstance instance{};
+    styleConfig::GPUBufferType instance = style->GPUBuffer;
 
     instance.pos = {globalPosition.x + pg.rect.x,
                     globalPosition.y + fontAscender + pg.rect.y};
@@ -159,7 +168,7 @@ void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
     instance.uvMax = {pg.uv.z, pg.uv.w};
 
     instance.strokeWidth = pg.fontWeightOffset;
-    instance.opacity = style->opacity;
+    // instance.opacity = style->opacity;
 
     // IMPORTANT: font is NOT stored in UIInstance
     // font only affects glyph generation
@@ -174,27 +183,29 @@ void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
                                const ui::styleConfig *style) {
   uint32_t textureId = get_or_create_texture(path);
 
-  UIInstance instance{};
+  styleConfig::GPUBufferType instance = style->GPUBuffer;
   instance.pos = globalPosition;
   instance.size = computedSize;
-  instance.backgroundColor = style ? style->backgroundColor
-                                   : math::vec4<float>{1.0f, 1.0f, 1.0f, 1.0f};
-  instance.radius =
-      style ? style->radius : math::vec4<float>{0.0f, 0.0f, 0.0f, 0.0f};
-
-  instance.shapeType = 3; // SHAPE_IMAGE
+  // instance.backgroundColor = style ? style->backgroundColor
+  //                                  :
+  //                                  math::vec4<float>{1.0f, 1.0f, 1.0f, 1.0f};
+  // instance.radius =
+  //     style ? style->radius : math::vec4<float>{0.0f, 0.0f, 0.0f, 0.0f};
+  //
+  instance.shapeType =
+      static_cast<uint32_t>(ui::ShapeType::Image); // SHAPE_IMAGE
   instance.textureIndex = textureId;
 
-  instance.uvMin = {0.0f, 0.0f};
-  instance.uvMax = {1.0f, 1.0f};
-
-  instance.strokeWidth = style ? style->strokeWidth : 0.0f;
-  instance.strokeColor =
-      style ? style->strokeColor : math::vec4<float>{0.0f, 0.0f, 0.0f, 0.0f};
-  instance.strokePosition = style ? style->strokePosition : 0;
-  instance.dotGap = style ? style->dotGap : 0.0f;
-  instance.dotSize = style ? style->dotSize : 0.0f;
-  instance.opacity = style ? style->opacity : 1.0f;
+  // instance.uvMin = {0.0f, 0.0f};
+  // instance.uvMax = {1.0f, 1.0f};
+  //
+  // instance.strokeWidth = style ? style->strokeWidth : 0.0f;
+  // instance.strokeColor =
+  //     style ? style->strokeColor : math::vec4<float>{0.0f, 0.0f, 0.0f, 0.0f};
+  // instance.strokePosition = style ? style->strokePosition : 0;
+  // instance.dotGap = style ? style->dotGap : 0.0f;
+  // instance.dotSize = style ? style->dotSize : 0.0f;
+  // instance.opacity = style ? style->opacity : 1.0f;
 
   m_ui_queue.push_back(instance);
 }

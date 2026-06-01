@@ -1,8 +1,8 @@
 #include "window_sdl.hpp"
 #include "layout/atomicEngine/engine.hpp"
 #include "layout/elements/text.hpp"
-#include "renderer/font/freetype_font.hpp"
-#include "renderer/font/interface.hpp"
+// #include "renderer/font/freetype_font.hpp"
+// #include "renderer/font/interface.hpp"
 #include "renderer/vulkan/vulkan_renderer.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
@@ -76,8 +76,8 @@ void SDLWindow::render() {
 
     // We pass logical sizes here because ExecSizingPass multiplies them by
     // dpiScale internally!
-    rootStyle.size.x = static_cast<float>(logicalW);
-    rootStyle.size.y = static_cast<float>(logicalH);
+    rootStyle.GPUBuffer.size.x = static_cast<float>(logicalW);
+    rootStyle.GPUBuffer.size.y = static_cast<float>(logicalH);
 
     // 2. Run the processing passes with absolute physical pixel targets
     math::vec2<float> surfaceDimensions{static_cast<float>(drawableW),

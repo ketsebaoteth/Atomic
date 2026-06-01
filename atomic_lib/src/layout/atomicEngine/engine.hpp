@@ -4,7 +4,7 @@
 #include "math/vec.hpp"
 #include "renderer/style.hpp"
 #include <algorithm>
-#include <variant>
+// #include <variant>
 #include <vector>
 
 namespace ui {
@@ -25,7 +25,7 @@ public:
 
     ExecSizingPass(rootNode, canvasBounds);
 
-    math::vec2<float> rootStartingPosition = rootNode->GetStyle().pos;
+    math::vec2<float> rootStartingPosition = rootNode->GetStyle().GPUBuffer.pos;
     ExecPositionPass(rootNode, rootStartingPosition);
 
     m_linearizedRenderCache.clear();
@@ -48,6 +48,7 @@ private:
     const ui::styleConfig &style = node->GetStyle();
     LayoutAccumulation &metrics = node->GetLayoutMetrics();
 
+    const styleConfig::GPUBufferType style_ = style.GPUBuffer;
     // Leaf nodes (Text layout evaluation)
     // Leaf nodes (Text layout evaluation)
     if (node->GetType() == ElementType::TEXT) {
@@ -64,16 +65,16 @@ private:
       math::vec2<float> intrinsicSize = textNode->ComputeIntrinsicBounds(
           activeFont, scaledFontSize, m_globalDpiScale);
 
-      if (style.size.x == ui::fit) {
+      if (style_.size.x == ui::fit) {
         metrics.computed_size.x = intrinsicSize.x;
-      } else if (style.size.x >= 0) {
-        metrics.computed_size.x = style.size.x * m_globalDpiScale;
+      } else if (style_.size.x >= 0) {
+        metrics.computed_size.x = style_.size.x * m_globalDpiScale;
       }
 
-      if (style.size.y == ui::fit) {
+      if (style_.size.y == ui::fit) {
         metrics.computed_size.y = intrinsicSize.y;
-      } else if (style.size.y >= 0) {
-        metrics.computed_size.y = style.size.y * m_globalDpiScale;
+      } else if (style_.size.y >= 0) {
+        metrics.computed_size.y = style_.size.y * m_globalDpiScale;
       }
       return;
     }
@@ -87,10 +88,11 @@ private:
     float paddingY =
         (style.padding.top + style.padding.bottom) * m_globalDpiScale;
 
-    float currentBoundaryX = style.size.x >= 0 ? style.size.x * m_globalDpiScale
-                                               : parentAllocation.x;
-    float currentBoundaryY = style.size.y >= 0
-                                 ? (style.size.y * m_globalDpiScale)
+    float currentBoundaryX = style_.size.x >= 0
+                                 ? style_.size.x * m_globalDpiScale
+                                 : parentAllocation.x;
+    float currentBoundaryY = style_.size.y >= 0
+                                 ? (style_.size.y * m_globalDpiScale)
                                  : parentAllocation.y;
 
     math::vec2<float> currentInnerCapacity = {
@@ -101,7 +103,7 @@ private:
     // PASS 1A: Pre-Pass (Resolve SizeFit nodes first)
     // =================================================================
     for (const auto &child : node->GetChildren()) {
-      const auto &childStyle = child->GetStyle();
+      const auto &childStyle = child->GetStyle().GPUBuffer;
       const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
 
       if (mainSize == ui::fit) {
@@ -118,7 +120,8 @@ private:
 
     for (const auto &child : node->GetChildren()) {
       const auto &childStyle = child->GetStyle();
-      const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
+      const auto &mainSize =
+          isRow ? childStyle.GPUBuffer.size.x : childStyle.GPUBuffer.size.y;
 
       // Scale up margins dynamically
       float marginTotal =
@@ -155,7 +158,7 @@ private:
     // PASS 2 & 3: Budget Determination & Deep Child Recursion
     // =================================================================
     for (const auto &child : node->GetChildren()) {
-      const auto &childStyle = child->GetStyle();
+      const auto &childStyle = child->GetStyle().GPUBuffer;
       const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
 
       if (mainSize == ui::fit)
@@ -246,9 +249,9 @@ private:
       return parentAlloc;
     };
 
-    metrics.computed_size.x = resolveFinalMetric(style.size.x, contentSize.x,
+    metrics.computed_size.x = resolveFinalMetric(style_.size.x, contentSize.x,
                                                  paddingX, parentAllocation.x);
-    metrics.computed_size.y = resolveFinalMetric(style.size.y, contentSize.y,
+    metrics.computed_size.y = resolveFinalMetric(style_.size.y, contentSize.y,
                                                  paddingY, parentAllocation.y);
   }
 

@@ -751,15 +751,6 @@ void VulkanRenderer::render_batch() {
          m_ui_queue.size() * sizeof(styleConfig::StyleConfigGPU));
   vkUnmapMemory(m_device, m_storageBufferMemory);
 
-  if (!m_gradientStops.empty()) {
-    void *gradData;
-    vkMapMemory(m_device, m_gradientBufferMemory, 0,
-                m_gradientStops.size() * sizeof(GradientStopGPU), 0, &gradData);
-    memcpy(gradData, m_gradientStops.data(),
-           m_gradientStops.size() * sizeof(GradientStopGPU));
-    vkUnmapMemory(m_device, m_gradientBufferMemory);
-  }
-
   vkCmdBindPipeline(m_commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
                     m_graphicsPipeline);
 
@@ -787,7 +778,6 @@ void VulkanRenderer::render_batch() {
   vkCmdDraw(m_commandBuffer, 6, static_cast<uint32_t>(m_ui_queue.size()), 0, 0);
 
   m_ui_queue.clear();
-  m_gradientStops.clear();
 }
 
 void VulkanRenderer::create_storage_buffer() {

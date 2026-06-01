@@ -37,10 +37,6 @@ struct UIInstance {
 
     vec2 gradientCenter;
 
-    // float gradientRadius;
-    //
-    // uint gradientStopOffset;
-    // uint gradientStopCount;
     float gradientRadius;
     uint gradientStopCount;
 
@@ -77,7 +73,6 @@ layout(location = 13) flat out uint outGradientType;
 layout(location = 14) out float outGradientDirection;
 layout(location = 15) out vec2 outGradientCenter;
 layout(location = 16) out float outGradientRadius;
-// layout(location = 17) flat out uint outGradientStopOffset;
 layout(location = 18) flat out uint outGradientStopCount;
 layout(location = 19) out float outOpacity;
 layout(location = 20) flat out uint outIsRadialUniform;
@@ -93,7 +88,7 @@ void main() {
     vec2 p = positions[gl_VertexIndex];
 
     float expansion = 0.0;
-    if (data.shapeType != 3) { // Skip stroke expansion if drawing text (ShapeType == 3)
+    if (data.shapeType != 3) {
         if (data.strokePosition == 1) expansion = data.strokeWidth * 0.5; // Center
         if (data.strokePosition == 2) expansion = data.strokeWidth;       // Outer
     }
@@ -121,7 +116,6 @@ void main() {
     outGradientDirection  = data.gradientDirection;
     outGradientCenter     = data.gradientCenter;
     outGradientRadius     = data.gradientRadius;
-    //outGradientStopOffset = data.gradientStopOffset;
     outGradientStopCount  = data.gradientStopCount;
     outIsRadialUniform    = data.isRadialUniform;
     outInstanceIndex = gl_InstanceIndex;

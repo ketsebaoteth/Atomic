@@ -110,7 +110,6 @@ private:
 
   class Window *m_window;
   std::vector<styleConfig::StyleConfigGPU> m_ui_queue;
-  std::vector<GradientStopGPU> m_gradientStops;
   VkBuffer m_storageBuffer;
   VkDeviceMemory m_storageBufferMemory;
   VkBuffer m_gradientBuffer;

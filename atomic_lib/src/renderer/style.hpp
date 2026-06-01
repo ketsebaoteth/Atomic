@@ -28,21 +28,8 @@ struct GradientStop {
 
 enum class FlexDirection : uint32_t { Column = 0, Row = 1 };
 
-// struct SizeFit {};
-// struct SizeFill {};
-
-// using Size = std::variant<float, SizeFit, SizeFill>;
-
-// inline constexpr SizeFit fit{};
-// inline constexpr SizeFill fill{};
-
 inline constexpr float fit = -1.0f;
 inline constexpr float fill = -2.0f;
-
-// struct Size2D {
-//   Size x = fit;
-//   Size y = fit;
-// };
 
 struct EdgeInsets {
   float top = 0.0f;
@@ -69,9 +56,6 @@ struct EdgeInsets {
   }
 };
 
-// struct Overflow {
-//   int Hidden = 0;
-// };
 enum class Overflow : uint32_t { Hidden = 0, Visible = 1 };
 
 struct CornerRadius {
@@ -106,10 +90,6 @@ struct CornerRadius {
 };
 
 struct styleConfig {
-  // ========================================================================
-  // GPU-MAPPED BLIT ZONE (Exact byte alignment matching your std430 shader)
-  // ========================================================================
-
   // INFO: GPU only data starts here
   // Offset 0
   struct StyleConfigGPU {
@@ -160,7 +140,7 @@ struct styleConfig {
   // INFO: GPU only data ends here
 
   // ========================================================================
-  // CPU-ONLY ZONE BEGINS HERE (Offset 288)
+  // CPU-ONLY ZONE BEGINS HERE
   // ========================================================================
 
   EdgeInsets margin;

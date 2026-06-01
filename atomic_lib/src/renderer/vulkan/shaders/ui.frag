@@ -71,12 +71,10 @@ layout(location = 13) flat in uint inGradientType;
 layout(location = 14) in float inGradientDirection;
 layout(location = 15) in vec2 inGradientCenter;
 layout(location = 16) in float inGradientRadius;
-//layout(location = 17) flat in uint inGradientStopOffset;
 layout(location = 18) flat in uint inGradientStopCount;
 layout(location = 19) in float inOpacity;
 layout(location = 20) flat in uint inIsRadialUniform;
 layout(location = 21) flat in uint inInstanceIndex;
-// layout(location = 20) flat in vec4 inClipRect;
 
 layout(location = 0) out vec4 fColor;
 
@@ -96,7 +94,6 @@ vec4 sampleGradient(float t)
 
     GradientStop first =
         instance.gradientStops[0];
-        // gradientStops[inGradientStopOffset];
 
     if (inGradientStopCount == 1 || t <= first.position)
         return first.color;
@@ -105,13 +102,6 @@ vec4 sampleGradient(float t)
          i < inGradientStopCount - 1;
          ++i)
     {
-        // GradientStop a =
-        //     gradientStops[
-        //         inGradientStopOffset + i];
-        //
-        // GradientStop b =
-        //     gradientStops[
-        //         inGradientStopOffset + i + 1];
         GradientStop a = instance.gradientStops[i];
         GradientStop b = instance.gradientStops[i + 1];
 
@@ -130,10 +120,6 @@ vec4 sampleGradient(float t)
         }
     }
 
-    // GradientStop last =
-    //     gradientStops[
-    //         inGradientStopOffset
-    //         + inGradientStopCount - 1];
      GradientStop last =
        instance.gradientStops[inGradientStopCount - 1];
 

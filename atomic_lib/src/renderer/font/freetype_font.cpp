@@ -1,4 +1,5 @@
 #include "renderer/font/freetype_font.hpp"
+#include "font_manager.hpp"
 #include <cmath>
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -22,37 +23,6 @@ bool FreeTypeFont::initFreeType() {
     s_libInited = true;
   }
   return s_libInited;
-}
-
-static std::string resolveFont(const std::string &name) {
-  FcInit();
-
-  FcPattern *pattern = FcNameParse((const FcChar8 *)name.c_str());
-
-  FcConfigSubstitute(nullptr, pattern, FcMatchPattern);
-  FcDefaultSubstitute(pattern);
-
-  FcResult result;
-  FcPattern *match = FcFontMatch(nullptr, pattern, &result);
-
-  FcPatternDestroy(pattern);
-
-  if (!match) {
-    return "";
-  }
-
-  FcChar8 *file = nullptr;
-
-  if (FcPatternGetString(match, FC_FILE, 0, &file) != FcResultMatch) {
-    FcPatternDestroy(match);
-    return "";
-  }
-
-  std::string path = (char *)file;
-
-  FcPatternDestroy(match);
-
-  return path;
 }
 
 bool FreeTypeFont::load(const std::string &path, uint32_t size) {

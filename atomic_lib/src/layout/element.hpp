@@ -2,7 +2,7 @@
 #include "math/vec.hpp"
 #include "renderer/style.hpp"
 #include <memory>
-#include <variant>
+// #include <variant>
 #include <vector>
 
 namespace ui {
@@ -26,7 +26,7 @@ public:
   virtual ~IElement() = default;
 
   virtual ElementType GetType() const = 0;
-  virtual const ui::styleConfig &GetStyle() const = 0;
+  // virtual const ui::styleConfig &GetStyle() const = 0;
   virtual ui::styleConfig &GetStyle() = 0;
 
   virtual const LayoutAccumulation &GetLayoutMetrics() const = 0;

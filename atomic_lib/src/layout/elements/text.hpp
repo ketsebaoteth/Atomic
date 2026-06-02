@@ -5,7 +5,7 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
+// #include <variant>
 #include <vector>
 
 namespace ui {
@@ -20,7 +20,7 @@ public:
 
   ElementType GetType() const override { return ElementType::TEXT; }
 
-  const ui::styleConfig &GetStyle() const override { return m_style; }
+  // const ui::styleConfig &GetStyle() const override { return m_style; }
   ui::styleConfig &GetStyle() override { return m_style; }
 
   const LayoutAccumulation &GetLayoutMetrics() const override {

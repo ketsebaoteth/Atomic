@@ -53,15 +53,15 @@ public:
   // -- drawing code --
   void add_rect(const math::vec2<float> &globalPosition,
                 const math::vec2<float> &computedSize,
-                const ui::styleConfig *style) override;
+                ui::styleConfig *style) override;
   void add_circle(const math::vec2<float> &globalPosition, float radius,
                   ui::styleConfig *style) override;
   void add_text(const math::vec2<float> &globalPosition,
-                const std::string &text, const ui::styleConfig *style,
+                const std::string &text, ui::styleConfig *style,
                 float dpiScale) override;
   void add_image(const math::vec2<float> &globalPosition,
                  const math::vec2<float> &computedSize, const std::string &path,
-                 const ui::styleConfig *style) override;
+                 ui::styleConfig *style) override;
 
 private:
   void init_vulkan();

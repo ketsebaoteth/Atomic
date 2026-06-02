@@ -1,6 +1,7 @@
 #pragma once
 
 #include "math/vec.hpp"
+#include "renderer/font/font_cache.hpp"
 #include "renderer/font/interface.hpp"
 #include <cstdint>
 // #include <variant>
@@ -273,8 +274,8 @@ struct styleConfig {
     return *this;
   }
 
-  styleConfig &SetFont(ui::font::Font *fontName) {
-    font = fontName;
+  styleConfig &SetFont(std::string fontName) {
+    font = ui::font::FontCache::get(fontName);
     return *this;
   }
   constexpr styleConfig &SetFontSize(int val) {

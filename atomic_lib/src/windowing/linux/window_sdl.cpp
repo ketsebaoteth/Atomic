@@ -31,9 +31,7 @@ SDLWindow::SDLWindow(const WindowConfig &config)
     throw std::runtime_error("Window could not be created! SDL_Error: " +
                              std::string(SDL_GetError()));
   }
-
   SDL_SetWindowPosition(m_window, config.x, config.y);
-
   // Initialize backend renderer
   m_renderer = VulkanRenderer::Create(this);
 
@@ -90,9 +88,9 @@ void SDLWindow::render() {
   m_renderer->begin_frame();
 
   const auto &processQueue = m_layoutEngine->GetRenderCache();
-  for (const auto *node : processQueue) {
+  for (auto *node : processQueue) {
     const auto &metrics = node->GetLayoutMetrics();
-    const ui::styleConfig *style = &node->GetStyle();
+    ui::styleConfig *style = &node->GetStyle();
 
     switch (node->GetType()) {
     case ElementType::DIV:

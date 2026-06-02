@@ -14,16 +14,14 @@ namespace ui {
 
 void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
                               const math::vec2<float> &computedSize,
-                              const ui::styleConfig *style) {
+                              ui::styleConfig *style) {
   if (!style)
     return;
 
-  styleConfig::StyleConfigGPU instance = style->styleConfigGPU;
+  style->styleConfigGPU.pos = globalPosition;
+  style->styleConfigGPU.size = computedSize;
 
-  instance.pos = globalPosition;
-  instance.size = computedSize;
-
-  m_ui_queue.push_back(instance);
+  m_ui_queue.push_back(style->styleConfigGPU);
 }
 
 void VulkanRenderer::add_circle(const math::vec2<float> &globalPosition,
@@ -38,8 +36,8 @@ void VulkanRenderer::add_circle(const math::vec2<float> &globalPosition,
 }
 
 void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
-                              const std::string &text,
-                              const ui::styleConfig *style, float dpiScale) {
+                              const std::string &text, ui::styleConfig *style,
+                              float dpiScale) {
   if (!style) {
     printf("no font so not rendering");
     return;
@@ -70,45 +68,47 @@ void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
   float fontAscender = activeFont->getAscender(physicalFontSize);
 
   for (const auto &pg : positionedGlyphs) {
-    styleConfig::StyleConfigGPU instance = style->styleConfigGPU;
+    // styleConfig::StyleConfigGPU style->styleConfigGPU =
+    // style->styleConfigGPU;
 
-    instance.pos = {globalPosition.x + pg.rect.x,
-                    globalPosition.y + fontAscender + pg.rect.y};
+    style->styleConfigGPU.pos = {globalPosition.x + pg.rect.x,
+                                 globalPosition.y + fontAscender + pg.rect.y};
 
-    instance.size = {pg.rect.z, pg.rect.w};
+    style->styleConfigGPU.size = {pg.rect.z, pg.rect.w};
 
-    instance.backgroundColor = pg.color;
+    style->styleConfigGPU.backgroundColor = pg.color;
 
-    instance.shapeType = static_cast<uint32_t>(ui::ShapeType::Text);
+    style->styleConfigGPU.shapeType =
+        static_cast<uint32_t>(ui::ShapeType::Text);
 
-    instance.uvMin = {pg.uv.x, pg.uv.y};
-    instance.uvMax = {pg.uv.z, pg.uv.w};
+    style->styleConfigGPU.uvMin = {pg.uv.x, pg.uv.y};
+    style->styleConfigGPU.uvMax = {pg.uv.z, pg.uv.w};
 
-    instance.strokeWidth = pg.fontWeightOffset;
-    // instance.opacity = style->opacity;
+    style->styleConfigGPU.strokeWidth = pg.fontWeightOffset;
+    // style->styleConfigGPU.opacity = style->opacity;
 
-    // IMPORTANT: font is NOT stored in UIInstance
+    // IMPORTANT: font is NOT stored in UIstyle->styleConfigGPU
     // font only affects glyph generation
 
-    m_ui_queue.push_back(instance);
+    m_ui_queue.push_back(style->styleConfigGPU);
   }
 }
 
 void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
                                const math::vec2<float> &computedSize,
                                const std::string &path,
-                               const ui::styleConfig *style) {
+                               ui::styleConfig *style) {
   uint32_t textureId = get_or_create_texture(path);
 
-  styleConfig::StyleConfigGPU instance = style->styleConfigGPU;
-  instance.pos = globalPosition;
-  instance.size = computedSize;
+  // styleConfig::StyleConfigGPU style->styleConfigGPU = style->styleConfigGPU;
+  style->styleConfigGPU.pos = globalPosition;
+  style->styleConfigGPU.size = computedSize;
 
-  instance.shapeType =
+  style->styleConfigGPU.shapeType =
       static_cast<uint32_t>(ui::ShapeType::Image); // SHAPE_IMAGE
-  instance.textureIndex = textureId;
+  style->styleConfigGPU.textureIndex = textureId;
 
-  m_ui_queue.push_back(instance);
+  m_ui_queue.push_back(style->styleConfigGPU);
 }
 
 } // namespace ui

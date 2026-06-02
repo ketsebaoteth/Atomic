@@ -152,7 +152,10 @@ auto GradientTestUI() {
               .SetPadding(EdgeInsets::all(10.0f))
               .SetOpacity(1.0f),
 
-          Text(ui::styleConfig().SetFontSize(20).SetBGColor({1, 1, 1, 1}),
+          Text(ui::styleConfig()
+                   .SetFontSize(20)
+                   .SetBGColor({1, 1, 1, 1})
+                   .SetFont("inter"),
                "Linear Gradient")),
 
       // ---------------------------
@@ -167,8 +170,10 @@ auto GradientTestUI() {
               .SetRadius(CornerRadius::all(16.0f))
               .SetOpacity(1.0f),
 
-          Text(ui::styleConfig().SetFontSize(18).SetBGColor(
-                   {0.9f, 0.9f, 0.9f, 1}),
+          Text(ui::styleConfig()
+                   .SetFontSize(18)
+                   .SetBGColor({0.9f, 0.9f, 0.9f, 1})
+                   .SetFont("meslo"),
                "Radial Gradient Layer")));
 }
 

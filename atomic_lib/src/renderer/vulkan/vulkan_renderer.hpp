@@ -19,23 +19,14 @@ struct UIPushConstants {
   math::vec2<float> resolution;
 };
 
-struct UIInstance {
-  alignas(8) math::vec2<float> pos;
-  alignas(8) math::vec2<float> size;
+struct GradientStopGPU {
   alignas(16) math::vec4<float> color;
-  alignas(16) math::vec4<float> radius;
-  alignas(4) uint32_t shapeType;
+  alignas(4) float position;
 
-  alignas(4) float strokeWidth;
-  alignas(4) uint32_t strokePosition;
-  alignas(4) float dotGap;
-  alignas(4) float dotSize;
-
-  alignas(4) uint32_t textureIndex;
-
-  alignas(8) math::vec2<float> uvMin;
-  alignas(8) math::vec2<float> uvMax;
-  alignas(16) math::vec4<float> strokeColor;
+  // std430 padding
+  alignas(4) float _pad0 = 0.0f;
+  alignas(4) float _pad1 = 0.0f;
+  alignas(4) float _pad2 = 0.0f;
 };
 
 class VulkanRenderer : public Renderer {
@@ -54,6 +45,7 @@ public:
     m_default_font = std::move(font);
   }
   ui::font::Font *get_default_font() override { return m_default_font.get(); }
+  ui::font::Font *getFont(ui::font::Font *font);
 
   void set_asset_loader(ui::asset::AssetLoader *loader) {
     m_asset_loader = loader;
@@ -61,15 +53,15 @@ public:
   // -- drawing code --
   void add_rect(const math::vec2<float> &globalPosition,
                 const math::vec2<float> &computedSize,
-                const ui::styleConfig *style) override;
+                ui::styleConfig *style) override;
   void add_circle(const math::vec2<float> &globalPosition, float radius,
                   ui::styleConfig *style) override;
   void add_text(const math::vec2<float> &globalPosition,
-                const std::string &text, const ui::styleConfig *style,
+                const std::string &text, ui::styleConfig *style,
                 float dpiScale) override;
   void add_image(const math::vec2<float> &globalPosition,
                  const math::vec2<float> &computedSize, const std::string &path,
-                 const ui::styleConfig *style) override;
+                 ui::styleConfig *style) override;
 
 private:
   void init_vulkan();
@@ -117,9 +109,11 @@ private:
   VkShaderModule createShaderModule(const std::vector<char> &code);
 
   class Window *m_window;
-  std::vector<UIInstance> m_ui_queue;
+  std::vector<styleConfig::StyleConfigGPU> m_ui_queue;
   VkBuffer m_storageBuffer;
   VkDeviceMemory m_storageBufferMemory;
+  VkBuffer m_gradientBuffer;
+  VkDeviceMemory m_gradientBufferMemory;
 
   VkInstance m_instance = VK_NULL_HANDLE;
   VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;

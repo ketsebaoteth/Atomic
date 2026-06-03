@@ -1,21 +1,49 @@
 #version 450
 
+struct GradientStop {
+    vec4 color;
+    float position;
+    float _pad0;
+    float _pad1;
+    float _pad2;
+};
+
 struct UIInstance {
-    vec2 pos;             // Offset 0
-    vec2 size;            // Offset 8
-    vec4 color;           // Offset 16
-    vec4 radius;          // Offset 32
-    uint shapeType;       // Offset 48
-    float strokeWidth;    // Offset 52
-    uint strokePosition;  // Offset 56 (0=Inner, 1=Center, 2=Outer)
-    float dotGap;         // Offset 60
-    float dotSize;        // Offset 64
-    
-    uint textureIndex;    // Offset 68 -> Explicitly occupies the 4-byte alignment hole!
-    
-    vec2 uvMin;           // Offset 72 -> Correctly aligned on an 8-byte boundary
-    vec2 uvMax;           // Offset 80
-    vec4 strokeColor;     // Offset 88
+    vec2 pos;
+    vec2 size;
+
+    vec4 backgroundColor;
+    vec4 radius;
+
+    float opacity;
+    uint shapeType;
+
+    float strokeWidth;
+    uint strokePosition;
+    float dotGap;
+    float dotSize;
+
+    uint textureIndex;
+    uint isRadialUniform;
+
+    vec2 uvMin;
+    vec2 uvMax;
+
+    vec4 strokeColor;
+
+    uint gradientType;
+
+    float gradientDirection;
+
+    vec2 gradientCenter;
+
+    float gradientRadius;
+    uint gradientStopCount;
+
+    uint _pad0;
+    uint _pad1;
+
+    GradientStop gradientStops[8];
 };
 
 layout(std430, binding = 0) readonly buffer UIBuffer {
@@ -41,6 +69,14 @@ layout(location = 9) flat out uint outStrokePos;
 layout(location = 10) out vec2 outUVMin;
 layout(location = 11) out vec2 outUVMax;
 layout(location = 12) flat out uint outTextureIndex;
+layout(location = 13) flat out uint outGradientType;
+layout(location = 14) out float outGradientDirection;
+layout(location = 15) out vec2 outGradientCenter;
+layout(location = 16) out float outGradientRadius;
+layout(location = 18) flat out uint outGradientStopCount;
+layout(location = 19) out float outOpacity;
+layout(location = 20) flat out uint outIsRadialUniform;
+layout(location = 21) flat out uint outInstanceIndex;
 
 const vec2 positions[6] = vec2[](
     vec2(0.0, 0.0), vec2(1.0, 0.0), vec2(0.0, 1.0),
@@ -52,7 +88,7 @@ void main() {
     vec2 p = positions[gl_VertexIndex];
 
     float expansion = 0.0;
-    if (data.shapeType != 3) { // Skip stroke expansion if drawing text (ShapeType == 3)
+    if (data.shapeType != 3) {
         if (data.strokePosition == 1) expansion = data.strokeWidth * 0.5; // Center
         if (data.strokePosition == 2) expansion = data.strokeWidth;       // Outer
     }
@@ -63,10 +99,11 @@ void main() {
     vec2 screenPos = expandedPos + (p * expandedSize);
     outUV = (screenPos - data.pos) / data.size; 
 
-    outColor        = data.color;
-    outSize         = data.size; 
+    outColor        = data.backgroundColor;
+    outSize         = data.size;
     outRadius       = data.radius;
     outShapeType    = data.shapeType;
+    outOpacity      = data.opacity;
     outStrokeWidth  = data.strokeWidth;
     outStrokeColor  = data.strokeColor;
     outDotGap       = data.dotGap;
@@ -75,6 +112,13 @@ void main() {
     outUVMin        = data.uvMin;
     outUVMax        = data.uvMax;
     outTextureIndex = data.textureIndex;
+    outGradientType       = data.gradientType;
+    outGradientDirection  = data.gradientDirection;
+    outGradientCenter     = data.gradientCenter;
+    outGradientRadius     = data.gradientRadius;
+    outGradientStopCount  = data.gradientStopCount;
+    outIsRadialUniform    = data.isRadialUniform;
+    outInstanceIndex = gl_InstanceIndex;
 
     vec2 normalizedPos = screenPos / globals.resolution;
     gl_Position = vec4(normalizedPos * 2.0 - 1.0, 0.0, 1.0);

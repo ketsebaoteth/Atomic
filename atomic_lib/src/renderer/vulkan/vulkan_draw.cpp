@@ -1,12 +1,12 @@
-#include "SDL3/SDL_video.h"
+// #include "SDL3/SDL_video.h"
 #include "renderer/font/freetype_layout.hpp"
 #include "renderer/font/interface.hpp"
 #include "renderer/style.hpp"
 #include "renderer/vulkan/vulkan_renderer.hpp"
-#include "windowing/interface.hpp"
+// #include "windowing/interface.hpp"
 #include <cstdint>
 #include <cstdio>
-#include <iostream>
+// #include <iostream>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -14,23 +14,14 @@ namespace ui {
 
 void VulkanRenderer::add_rect(const math::vec2<float> &globalPosition,
                               const math::vec2<float> &computedSize,
-                              const ui::styleConfig *style) {
+                              ui::styleConfig *style) {
   if (!style)
     return;
 
-  UIInstance instance{};
-  instance.pos = globalPosition;
-  instance.size = computedSize;
-  instance.color = style->color;
-  instance.radius = style->radius;
-  instance.shapeType = static_cast<uint32_t>(style->shape);
-  instance.strokeWidth = style->strokeWidth;
-  instance.strokeColor = style->strokeColor;
-  instance.dotGap = style->dotGap;
-  instance.dotSize = style->dotSize;
-  instance.strokePosition = style->strokePosition;
+  style->styleConfigGPU.pos = globalPosition;
+  style->styleConfigGPU.size = computedSize;
 
-  m_ui_queue.push_back(instance);
+  m_ui_queue.push_back(style->styleConfigGPU);
 }
 
 void VulkanRenderer::add_circle(const math::vec2<float> &globalPosition,
@@ -38,98 +29,86 @@ void VulkanRenderer::add_circle(const math::vec2<float> &globalPosition,
   if (!style)
     return;
 
-  style->radius = {radius, radius, radius, radius};
+  style->styleConfigGPU.radius = {radius, radius, radius, radius};
   math::vec2<float> diameterSize{radius * 2.0f, radius * 2.0f};
 
   add_rect(globalPosition, diameterSize, style);
 }
 
 void VulkanRenderer::add_text(const math::vec2<float> &globalPosition,
-                              const std::string &text,
-                              const ui::styleConfig *style, float dpiScale) {
+                              const std::string &text, ui::styleConfig *style,
+                              float dpiScale) {
   if (!style) {
     printf("no font so not rendering");
     return;
   }
 
   ui::font::Font *activeFont = style->font
-                                   ? static_cast<ui::font::Font *>(style->font)
+                                   ? getFont(style->font) // fontId lookup
                                    : m_default_font.get();
 
   if (!activeFont) {
-    std::cerr << "Renderer Warning: Dropping text draw call due to missing "
-                 "Font asset."
-              << std::endl;
+    printf("no font set so not rendering");
     return;
   }
 
-  // Pure single-source-of-truth configuration pass passed explicitly from
-  // SDLWindow
   float physicalFontSize = style->fontSize * dpiScale;
   float physicalMaxWidth = style->maxWidth * dpiScale;
   float physicalTracking = style->tracking * dpiScale;
 
-  std::vector<font::TextRun> runs = font::TextLayoutEngine::parseRichText(
-      text, physicalFontSize, style->color);
+  auto runs = font::TextLayoutEngine::parseRichText(text, physicalFontSize,
+                                                    style->textColor);
 
-  if (!runs.empty()) {
+  if (!runs.empty())
     runs[0].styleFlags = static_cast<uint8_t>(style->styleFlag);
-  }
 
-  std::vector<ui::font::PositionedGlyph> positionedGlyphs =
-      font::TextLayoutEngine::calcLayout(runs, activeFont, physicalMaxWidth,
-                                         physicalTracking);
+  auto positionedGlyphs = font::TextLayoutEngine::calcLayout(
+      runs, activeFont, physicalMaxWidth, physicalTracking);
 
-  // NOTE: If getAscender() inside your freetype_font layer already reflects the
-  // internal FreeType face metrics scaled by physicalFontSize, do not multiply
-  // by dpiScale again.
   float fontAscender = activeFont->getAscender(physicalFontSize);
 
   for (const auto &pg : positionedGlyphs) {
-    UIInstance instance{};
-    instance.pos = {globalPosition.x + pg.rect.x,
-                    globalPosition.y + fontAscender + pg.rect.y};
-    instance.size = {pg.rect.z, pg.rect.w};
-    instance.color = pg.color;
+    // styleConfig::StyleConfigGPU style->styleConfigGPU =
+    // style->styleConfigGPU;
 
-    instance.shapeType = 2; // SHAPE_TEXT
-    instance.uvMin = {pg.uv.x, pg.uv.y};
-    instance.uvMax = {pg.uv.z, pg.uv.w};
+    style->styleConfigGPU.pos = {globalPosition.x + pg.rect.x,
+                                 globalPosition.y + fontAscender + pg.rect.y};
 
-    instance.strokeWidth = pg.fontWeightOffset;
+    style->styleConfigGPU.size = {pg.rect.z, pg.rect.w};
 
-    m_ui_queue.push_back(instance);
+    style->styleConfigGPU.backgroundColor = pg.color;
+
+    style->styleConfigGPU.shapeType =
+        static_cast<uint32_t>(ui::ShapeType::Text);
+
+    style->styleConfigGPU.uvMin = {pg.uv.x, pg.uv.y};
+    style->styleConfigGPU.uvMax = {pg.uv.z, pg.uv.w};
+
+    style->styleConfigGPU.strokeWidth = pg.fontWeightOffset;
+    // style->styleConfigGPU.opacity = style->opacity;
+
+    // IMPORTANT: font is NOT stored in UIstyle->styleConfigGPU
+    // font only affects glyph generation
+
+    m_ui_queue.push_back(style->styleConfigGPU);
   }
 }
 
 void VulkanRenderer::add_image(const math::vec2<float> &globalPosition,
                                const math::vec2<float> &computedSize,
                                const std::string &path,
-                               const ui::styleConfig *style) {
+                               ui::styleConfig *style) {
   uint32_t textureId = get_or_create_texture(path);
 
-  UIInstance instance{};
-  instance.pos = globalPosition;
-  instance.size = computedSize;
-  instance.color =
-      style ? style->color : math::vec4<float>{1.0f, 1.0f, 1.0f, 1.0f};
-  instance.radius =
-      style ? style->radius : math::vec4<float>{0.0f, 0.0f, 0.0f, 0.0f};
+  // styleConfig::StyleConfigGPU style->styleConfigGPU = style->styleConfigGPU;
+  style->styleConfigGPU.pos = globalPosition;
+  style->styleConfigGPU.size = computedSize;
 
-  instance.shapeType = 3; // SHAPE_IMAGE
-  instance.textureIndex = textureId;
+  style->styleConfigGPU.shapeType =
+      static_cast<uint32_t>(ui::ShapeType::Image); // SHAPE_IMAGE
+  style->styleConfigGPU.textureIndex = textureId;
 
-  instance.uvMin = {0.0f, 0.0f};
-  instance.uvMax = {1.0f, 1.0f};
-
-  instance.strokeWidth = style ? style->strokeWidth : 0.0f;
-  instance.strokeColor =
-      style ? style->strokeColor : math::vec4<float>{0.0f, 0.0f, 0.0f, 0.0f};
-  instance.strokePosition = style ? style->strokePosition : 0;
-  instance.dotGap = style ? style->dotGap : 0.0f;
-  instance.dotSize = style ? style->dotSize : 0.0f;
-
-  m_ui_queue.push_back(instance);
+  m_ui_queue.push_back(style->styleConfigGPU);
 }
 
 } // namespace ui

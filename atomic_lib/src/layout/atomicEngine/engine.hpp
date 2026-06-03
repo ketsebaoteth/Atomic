@@ -4,7 +4,7 @@
 #include "math/vec.hpp"
 #include "renderer/style.hpp"
 #include <algorithm>
-#include <variant>
+// #include <variant>
 #include <vector>
 
 namespace ui {
@@ -25,7 +25,8 @@ public:
 
     ExecSizingPass(rootNode, canvasBounds);
 
-    math::vec2<float> rootStartingPosition = rootNode->GetStyle().pos;
+    math::vec2<float> rootStartingPosition =
+        rootNode->GetStyle().styleConfigGPU.pos;
     ExecPositionPass(rootNode, rootStartingPosition);
 
     m_linearizedRenderCache.clear();
@@ -48,6 +49,7 @@ private:
     const ui::styleConfig &style = node->GetStyle();
     LayoutAccumulation &metrics = node->GetLayoutMetrics();
 
+    const styleConfig::StyleConfigGPU style_ = style.styleConfigGPU;
     // Leaf nodes (Text layout evaluation)
     // Leaf nodes (Text layout evaluation)
     if (node->GetType() == ElementType::TEXT) {
@@ -64,18 +66,16 @@ private:
       math::vec2<float> intrinsicSize = textNode->ComputeIntrinsicBounds(
           activeFont, scaledFontSize, m_globalDpiScale);
 
-      if (std::holds_alternative<ui::SizeFit>(style.size.x)) {
+      if (style_.size.x == ui::fit) {
         metrics.computed_size.x = intrinsicSize.x;
-      } else if (std::holds_alternative<float>(style.size.x)) {
-        metrics.computed_size.x =
-            std::get<float>(style.size.x) * m_globalDpiScale;
+      } else if (style_.size.x >= 0) {
+        metrics.computed_size.x = style_.size.x * m_globalDpiScale;
       }
 
-      if (std::holds_alternative<ui::SizeFit>(style.size.y)) {
+      if (style_.size.y == ui::fit) {
         metrics.computed_size.y = intrinsicSize.y;
-      } else if (std::holds_alternative<float>(style.size.y)) {
-        metrics.computed_size.y =
-            std::get<float>(style.size.y) * m_globalDpiScale;
+      } else if (style_.size.y >= 0) {
+        metrics.computed_size.y = style_.size.y * m_globalDpiScale;
       }
       return;
     }
@@ -89,14 +89,12 @@ private:
     float paddingY =
         (style.padding.top + style.padding.bottom) * m_globalDpiScale;
 
-    float currentBoundaryX =
-        std::holds_alternative<float>(style.size.x)
-            ? (std::get<float>(style.size.x) * m_globalDpiScale)
-            : parentAllocation.x;
-    float currentBoundaryY =
-        std::holds_alternative<float>(style.size.y)
-            ? (std::get<float>(style.size.y) * m_globalDpiScale)
-            : parentAllocation.y;
+    float currentBoundaryX = style_.size.x >= 0
+                                 ? style_.size.x * m_globalDpiScale
+                                 : parentAllocation.x;
+    float currentBoundaryY = style_.size.y >= 0
+                                 ? (style_.size.y * m_globalDpiScale)
+                                 : parentAllocation.y;
 
     math::vec2<float> currentInnerCapacity = {
         std::max(0.0f, currentBoundaryX - paddingX),
@@ -106,10 +104,10 @@ private:
     // PASS 1A: Pre-Pass (Resolve SizeFit nodes first)
     // =================================================================
     for (const auto &child : node->GetChildren()) {
-      const auto &childStyle = child->GetStyle();
+      const auto &childStyle = child->GetStyle().styleConfigGPU;
       const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
 
-      if (std::holds_alternative<ui::SizeFit>(mainSize)) {
+      if (mainSize == ui::fit) {
         math::vec2<float> fitBudget = currentInnerCapacity;
         ExecSizingPass(child.get(), fitBudget);
       }
@@ -123,7 +121,8 @@ private:
 
     for (const auto &child : node->GetChildren()) {
       const auto &childStyle = child->GetStyle();
-      const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
+      const auto &mainSize = isRow ? childStyle.styleConfigGPU.size.x
+                                   : childStyle.styleConfigGPU.size.y;
 
       // Scale up margins dynamically
       float marginTotal =
@@ -131,14 +130,13 @@ private:
                 : (childStyle.margin.top + childStyle.margin.bottom);
       marginTotal *= m_globalDpiScale;
 
-      if (std::holds_alternative<float>(mainSize)) {
-        totalFixedMainAxis +=
-            (std::get<float>(mainSize) * m_globalDpiScale) + marginTotal;
-      } else if (std::holds_alternative<ui::SizeFit>(mainSize)) {
+      if (mainSize >= 0) {
+        totalFixedMainAxis += (mainSize * m_globalDpiScale) + marginTotal;
+      } else if (mainSize == ui::fit) {
         float resolvedMain = isRow ? child->GetLayoutMetrics().computed_size.x
                                    : child->GetLayoutMetrics().computed_size.y;
         totalFixedMainAxis += resolvedMain + marginTotal;
-      } else if (std::holds_alternative<ui::SizeFill>(mainSize)) {
+      } else if (mainSize == ui::fill) {
         totalFixedMainAxis += marginTotal;
         fillCountMainAxis++;
       }
@@ -161,29 +159,27 @@ private:
     // PASS 2 & 3: Budget Determination & Deep Child Recursion
     // =================================================================
     for (const auto &child : node->GetChildren()) {
-      const auto &childStyle = child->GetStyle();
+      const auto &childStyle = child->GetStyle().styleConfigGPU;
       const auto &mainSize = isRow ? childStyle.size.x : childStyle.size.y;
 
-      if (std::holds_alternative<ui::SizeFit>(mainSize))
+      if (mainSize == ui::fit)
         continue;
 
       math::vec2<float> childAllocationBudget;
 
       // Handle X-Axis
-      if (std::holds_alternative<float>(childStyle.size.x)) {
-        childAllocationBudget.x =
-            std::get<float>(childStyle.size.x) * m_globalDpiScale;
-      } else if (std::holds_alternative<ui::SizeFill>(childStyle.size.x)) {
+      if (childStyle.size.x >= 0) {
+        childAllocationBudget.x = childStyle.size.x * m_globalDpiScale;
+      } else if (childStyle.size.x == ui::fill) {
         childAllocationBudget.x = isRow ? fillSlice : currentInnerCapacity.x;
       } else {
         childAllocationBudget.x = currentInnerCapacity.x;
       }
 
       // Handle Y-Axis
-      if (std::holds_alternative<float>(childStyle.size.y)) {
-        childAllocationBudget.y =
-            std::get<float>(childStyle.size.y) * m_globalDpiScale;
-      } else if (std::holds_alternative<ui::SizeFill>(childStyle.size.y)) {
+      if (childStyle.size.y >= 0) {
+        childAllocationBudget.y = childStyle.size.y * m_globalDpiScale;
+      } else if (childStyle.size.y == ui::fill) {
         childAllocationBudget.y = !isRow ? fillSlice : currentInnerCapacity.y;
       } else {
         childAllocationBudget.y = currentInnerCapacity.y;
@@ -232,32 +228,54 @@ private:
         contentSize.y += gapsMain;
     }
 
+    // auto resolveFinalMetric =
+    //     [this, &style](const ui::Size &sizeVariant, float contentVal,
+    //                    float paddingTotal, float parentAlloc) -> float {
+    //   if (std::holds_alternative<float>(sizeVariant)) {
+    //     return std::get<float>(sizeVariant) * m_globalDpiScale;
+    //   }
+    //   if (sizeVariant == ui::fit) {
+    //     return contentVal + paddingTotal;
+    //   }
+    //   return parentAlloc;
+    // };
     auto resolveFinalMetric =
-        [this, &style](const ui::Size &sizeVariant, float contentVal,
+        [this, &style](const float sizeVariant, float contentVal,
                        float paddingTotal, float parentAlloc) -> float {
-      if (std::holds_alternative<float>(sizeVariant)) {
-        return std::get<float>(sizeVariant) * m_globalDpiScale;
+      if (sizeVariant >= 0) {
+        return sizeVariant * m_globalDpiScale;
       }
-      if (std::holds_alternative<ui::SizeFit>(sizeVariant)) {
+      if (sizeVariant == ui::fit)
         return contentVal + paddingTotal;
-      }
       return parentAlloc;
     };
 
-    metrics.computed_size.x = resolveFinalMetric(style.size.x, contentSize.x,
+    metrics.computed_size.x = resolveFinalMetric(style_.size.x, contentSize.x,
                                                  paddingX, parentAllocation.x);
-    metrics.computed_size.y = resolveFinalMetric(style.size.y, contentSize.y,
+    metrics.computed_size.y = resolveFinalMetric(style_.size.y, contentSize.y,
                                                  paddingY, parentAllocation.y);
   }
 
-  void ExecPositionPass(IElement *node, const math::vec2<float> &globalOrigin) {
+  void ExecPositionPass(IElement *node, const math::vec2<float> &globalOrigin,
+                        const math::vec4<float> &currentClip = {
+                            -10000.0f, -10000.0f, 100000.0f, 100000.0f}) {
     if (!node)
       return;
 
     LayoutAccumulation &metrics = node->GetLayoutMetrics();
-    const ui::styleConfig &style = node->GetStyle();
+    ui::styleConfig &style = node->GetStyle();
 
     metrics.global_position = globalOrigin + metrics.local_position;
+
+    math::vec4<float> myClip = currentClip;
+    if (style.overflow == Overflow::Hidden) {
+      myClip.x = std::max(currentClip.x, metrics.global_position.x);
+      myClip.y = std::max(currentClip.y, metrics.global_position.y);
+      myClip.z = std::min(currentClip.z,
+                          metrics.global_position.x + metrics.computed_size.x);
+      myClip.w = std::min(currentClip.w,
+                          metrics.global_position.y + metrics.computed_size.y);
+    }
 
     math::vec2<float> childCursorOffset{style.padding.left * m_globalDpiScale,
                                         style.padding.top * m_globalDpiScale};

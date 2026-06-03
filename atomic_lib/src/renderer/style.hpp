@@ -1,9 +1,10 @@
 #pragma once
 
 #include "math/vec.hpp"
+#include "renderer/font/font_cache.hpp"
 #include "renderer/font/interface.hpp"
 #include <cstdint>
-#include <variant>
+// #include <variant>
 
 namespace ui {
 
@@ -14,20 +15,22 @@ enum class ShapeType : uint32_t {
   Image = 3
 };
 
+enum class GradientType : uint32_t { None = 0, Linear, Radial };
+
+enum class GradientDirectionUnit : uint8_t { Rad = 0, Deg };
+
+struct GradientStop {
+  alignas(16) math::vec4<float> color;
+  alignas(4) float position; // 0.0 - 1.0
+  alignas(4) float _pad0;
+  alignas(4) float _pad1;
+  alignas(4) float _pad2;
+};
+
 enum class FlexDirection : uint32_t { Column = 0, Row = 1 };
 
-struct SizeFit {};
-struct SizeFill {};
-
-using Size = std::variant<float, SizeFit, SizeFill>;
-
-inline constexpr SizeFit fit{};
-inline constexpr SizeFill fill{};
-
-struct Size2D {
-  Size x = fit;
-  Size y = fit;
-};
+inline constexpr float fit = -1.0f;
+inline constexpr float fill = -2.0f;
 
 struct EdgeInsets {
   float top = 0.0f;
@@ -53,6 +56,8 @@ struct EdgeInsets {
     return {top, right, bottom, left};
   }
 };
+
+enum class Overflow : uint32_t { Hidden = 0, Visible = 1 };
 
 struct CornerRadius {
   float topLeft = 0.0f;
@@ -86,36 +91,74 @@ struct CornerRadius {
 };
 
 struct styleConfig {
-  math::vec2<float> pos{0.0f, 0.0f};
-  Size2D size{ui::SizeFit{}, ui::SizeFit{}};
+  // INFO: GPU only data starts here
+  struct StyleConfigGPU {
+    alignas(8) math::vec2<float> pos{0.0f, 0.0f};
+    alignas(8) math::vec2<float> size{fit, fit};
+
+    alignas(16) math::vec4<float> backgroundColor = math::vec4<float>::all(1);
+
+    alignas(16) math::vec4<float> radius;
+
+    alignas(4) float opacity = 1.0f;
+    alignas(4) uint32_t shapeType = 0;
+    alignas(4) float strokeWidth = 0.0f;
+    alignas(4) uint32_t strokePosition = 2;
+
+    alignas(4) float dotGap = 0.0f;
+    alignas(4) float dotSize = 0.0f;
+    alignas(4) uint32_t textureIndex = 0;
+    alignas(4) uint32_t isRadialUniform = true;
+
+    alignas(8) math::vec2<float> uvMin{0.0f, 0.0f};
+    alignas(8) math::vec2<float> uvMax{1.0f, 1.0f};
+
+    alignas(16) math::vec4<float> strokeColor{0.3f, 0.3f, 0.3f, 1.0f};
+
+    alignas(4) uint32_t gradientType = 0;
+    alignas(4) float gradientDirection = 0.0f;
+    alignas(8) math::vec2<float> gradientCenter{0.5f, 0.5f};
+
+    alignas(4) float gradientRadius = 0.5f;
+    alignas(4) uint32_t gradientStopCount = 0;
+    alignas(8) uint32_t _padding[2]{};
+
+    alignas(16) GradientStop gradientStops[8];
+
+  } styleConfigGPU;
+
+  // INFO: GPU only data ends here
+
+  // ========================================================================
+  // CPU-ONLY ZONE BEGINS HERE
+  // ========================================================================
 
   EdgeInsets margin;
   EdgeInsets padding;
   math::vec2<float> gap{0.0f, 0.0f};
   FlexDirection flexDirection = FlexDirection::Column;
 
-  math::vec4<float> color = math::vec4<float>::all(1);
-  CornerRadius radius;
-  ShapeType shape = ShapeType::RoundedRect;
+  math::vec4<float> textColor = math::vec4<float>{0, 0, 0, 1};
 
-  float strokeWidth = 0.0f;
-  math::vec4<float> strokeColor{0.3f, 0.3f, 0.3f, 1.0f};
-  float dotGap = 0.0f;
-  float dotSize = 0.0f;
-  uint32_t strokePosition = 2;
+  Overflow overflow = Overflow::Hidden;
 
-  void *font = nullptr;
+  // std::vector<GradientStop> gradientStops;
+
+  // INFO: Linear Gradient Direction in Radians
+
+  // Radial gradient
+  ui::font::Font *font;
   int fontSize = 16;
   ui::font::TextStyleBit styleFlag = ui::font::TextStyleBit::Regular;
   int tracking = 0;
   int maxWidth = 0;
 
   constexpr styleConfig &SetPos(const math::vec2<float> &val) {
-    pos = val;
+    styleConfigGPU.pos = val;
     return *this;
   }
-  constexpr styleConfig &SetSize(const Size2D &val) {
-    size = val;
+  constexpr styleConfig &SetSize(const math::vec2<float> &val) {
+    styleConfigGPU.size = val;
     return *this;
   }
   constexpr styleConfig &SetMargin(const EdgeInsets &val) {
@@ -135,42 +178,104 @@ struct styleConfig {
     return *this;
   }
 
-  constexpr styleConfig &SetColor(const math::vec4<float> &val) {
-    color = val;
+  constexpr styleConfig &SetGradientType(const GradientType val) {
+    styleConfigGPU.gradientType = static_cast<uint32_t>(val);
+    return *this;
+  }
+
+  styleConfig &SetGradientStops(std::initializer_list<GradientStop> stops) {
+
+    styleConfigGPU.gradientStopCount =
+        static_cast<uint32_t>(std::min<size_t>(stops.size(), 8));
+
+    uint32_t i = 0;
+    for (const auto &stop : stops) {
+      if (i >= 8)
+        break;
+
+      styleConfigGPU.gradientStops[i++] = stop;
+    }
+
+    return *this;
+  }
+
+  constexpr styleConfig &SetGradientRadius(const float radius) {
+    styleConfigGPU.gradientRadius = radius;
+    return *this;
+  }
+
+  constexpr styleConfig &SetLinearGradDirection(
+      const float angle,
+      const GradientDirectionUnit unit = GradientDirectionUnit::Rad) {
+
+    if (unit == GradientDirectionUnit::Deg) {
+      styleConfigGPU.gradientDirection =
+          angle * (3.14159265358979323846f / 180.0f);
+    } else {
+      styleConfigGPU.gradientDirection = angle;
+    }
+
+    return *this;
+  }
+
+  constexpr styleConfig &SetRadialGradCenter(const math::vec2<float> &center) {
+    styleConfigGPU.gradientCenter = center;
+    return *this;
+  }
+
+  constexpr styleConfig &SetRadialUniform(const bool isUniform) {
+    styleConfigGPU.isRadialUniform = isUniform;
+    return *this;
+  }
+
+  constexpr styleConfig &SetTextColor(const math::vec4<float> &val) {
+    textColor = val;
+    return *this;
+  }
+  constexpr styleConfig &SetBGColor(const math::vec4<float> &val) {
+    styleConfigGPU.backgroundColor = val;
     return *this;
   }
   constexpr styleConfig &SetRadius(const CornerRadius &val) {
-    radius = val;
+    styleConfigGPU.radius = val;
     return *this;
   }
   constexpr styleConfig &SetShape(ShapeType val) {
-    shape = val;
+    styleConfigGPU.shapeType = static_cast<uint32_t>(val);
+    return *this;
+  }
+  constexpr styleConfig &SetOpacity(float opacity) {
+    styleConfigGPU.opacity = opacity;
+    return *this;
+  }
+  constexpr styleConfig &SetOverflow(Overflow val) {
+    overflow = val;
     return *this;
   }
 
   constexpr styleConfig &SetStrokeWidth(float val) {
-    strokeWidth = val;
+    styleConfigGPU.strokeWidth = val;
     return *this;
   }
   constexpr styleConfig &SetStrokeColor(const math::vec4<float> &val) {
-    strokeColor = val;
+    styleConfigGPU.strokeColor = val;
     return *this;
   }
   constexpr styleConfig &SetDotGap(float val) {
-    dotGap = val;
+    styleConfigGPU.dotGap = val;
     return *this;
   }
   constexpr styleConfig &SetDotSize(float val) {
-    dotSize = val;
+    styleConfigGPU.dotSize = val;
     return *this;
   }
   constexpr styleConfig &SetStrokePosition(uint32_t val) {
-    strokePosition = val;
+    styleConfigGPU.strokePosition = val;
     return *this;
   }
 
-  constexpr styleConfig &SetFont(void *val) {
-    font = val;
+  styleConfig &SetFont(std::string fontName) {
+    font = ui::font::FontCache::get(fontName);
     return *this;
   }
   constexpr styleConfig &SetFontSize(int val) {
@@ -190,5 +295,41 @@ struct styleConfig {
     return *this;
   }
 };
+
+namespace Typography {
+
+inline styleConfig H1() {
+  return styleConfig().SetFontSize(32).SetStyleFlag(
+      ui::font::TextStyleBit::Bold);
+}
+
+inline styleConfig H2() {
+  return styleConfig().SetFontSize(24).SetStyleFlag(
+      ui::font::TextStyleBit::Bold);
+}
+
+inline styleConfig H3() {
+  return styleConfig().SetFontSize(20).SetStyleFlag(
+      ui::font::TextStyleBit::Bold);
+}
+
+inline styleConfig Body() {
+  return styleConfig().SetFontSize(16).SetStyleFlag(
+      ui::font::TextStyleBit::Regular);
+}
+
+inline styleConfig Small() {
+  return styleConfig().SetFontSize(14).SetStyleFlag(
+      ui::font::TextStyleBit::Regular);
+}
+
+inline styleConfig Muted() {
+  return styleConfig()
+      .SetFontSize(14)
+      .SetStyleFlag(ui::font::TextStyleBit::Regular)
+      .SetTextColor({0.6f, 0.6f, 0.6f, 1.0f});
+}
+
+} // namespace Typography
 
 } // namespace ui

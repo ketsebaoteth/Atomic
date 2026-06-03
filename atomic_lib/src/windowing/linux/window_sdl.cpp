@@ -1,8 +1,8 @@
 #include "window_sdl.hpp"
 #include "layout/atomicEngine/engine.hpp"
 #include "layout/elements/text.hpp"
-#include "renderer/font/freetype_font.hpp"
-#include "renderer/font/interface.hpp"
+// #include "renderer/font/freetype_font.hpp"
+// #include "renderer/font/interface.hpp"
 #include "renderer/vulkan/vulkan_renderer.hpp"
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_video.h>
@@ -31,9 +31,7 @@ SDLWindow::SDLWindow(const WindowConfig &config)
     throw std::runtime_error("Window could not be created! SDL_Error: " +
                              std::string(SDL_GetError()));
   }
-
   SDL_SetWindowPosition(m_window, config.x, config.y);
-
   // Initialize backend renderer
   m_renderer = VulkanRenderer::Create(this);
 
@@ -76,8 +74,8 @@ void SDLWindow::render() {
 
     // We pass logical sizes here because ExecSizingPass multiplies them by
     // dpiScale internally!
-    rootStyle.size.x = static_cast<float>(logicalW);
-    rootStyle.size.y = static_cast<float>(logicalH);
+    rootStyle.styleConfigGPU.size.x = static_cast<float>(logicalW);
+    rootStyle.styleConfigGPU.size.y = static_cast<float>(logicalH);
 
     // 2. Run the processing passes with absolute physical pixel targets
     math::vec2<float> surfaceDimensions{static_cast<float>(drawableW),
@@ -90,9 +88,9 @@ void SDLWindow::render() {
   m_renderer->begin_frame();
 
   const auto &processQueue = m_layoutEngine->GetRenderCache();
-  for (const auto *node : processQueue) {
+  for (auto *node : processQueue) {
     const auto &metrics = node->GetLayoutMetrics();
-    const ui::styleConfig *style = &node->GetStyle();
+    ui::styleConfig *style = &node->GetStyle();
 
     switch (node->GetType()) {
     case ElementType::DIV:
@@ -106,6 +104,9 @@ void SDLWindow::render() {
                            dpiScale);
       break;
     }
+    case ElementType::IMAGE:
+      // not implemented directly in loop demo but keep format safe
+      break;
     default:
       break;
     }

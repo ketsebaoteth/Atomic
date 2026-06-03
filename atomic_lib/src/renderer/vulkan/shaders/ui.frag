@@ -1,8 +1,51 @@
 #version 450
+
 #define SHAPE_ROUNDED_RECT 0
 #define SHAPE_CIRCLE 1
 #define SHAPE_TEXT 2
 #define SHAPE_IMAGE 3
+
+#define GRADIENT_NONE 0
+#define GRADIENT_LINEAR 1
+#define GRADIENT_RADIAL 2
+
+struct GradientStop {
+    vec4 color;
+    float position;
+    float _pad0;
+    float _pad1;
+    float _pad2;
+};
+
+struct UIInstance {
+    vec2 pos;
+    vec2 size;
+    vec4 backgroundColor;
+    vec4 radius;
+    float opacity;
+    uint shapeType;
+    float strokeWidth;
+    uint strokePosition;
+    float dotGap;
+    float dotSize;
+    uint textureIndex;
+    uint isRadialUniform;
+    vec2 uvMin;
+    vec2 uvMax;
+    vec4 strokeColor;
+    uint gradientType;
+    float gradientDirection;
+    vec2 gradientCenter;
+    float gradientRadius;
+    uint gradientStopCount;
+    uint _pad0;
+    uint _pad1;
+    GradientStop gradientStops[8];
+};
+
+layout(std430, binding = 0) readonly buffer UIBuffer {
+    UIInstance instances[];
+};
 
 layout(binding = 1) uniform sampler2D fontAtlas; 
 layout(binding = 2) uniform sampler2D uiTexture[16];
@@ -21,6 +64,14 @@ layout(location = 9) flat in uint inStrokePos;
 layout(location = 10) in vec2 inUVMin;
 layout(location = 11) in vec2 inUVMax;
 layout(location = 12) flat in uint inTextureIndex;
+layout(location = 13) flat in uint inGradientType;
+layout(location = 14) in float inGradientDirection;
+layout(location = 15) in vec2 inGradientCenter;
+layout(location = 16) in float inGradientRadius;
+layout(location = 18) flat in uint inGradientStopCount;
+layout(location = 19) in float inOpacity;
+layout(location = 20) flat in uint inIsRadialUniform;
+layout(location = 21) flat in uint inInstanceIndex;
 
 layout(location = 0) out vec4 fColor;
 
@@ -31,22 +82,141 @@ float roundedBoxSDF(vec2 p, vec2 b, vec4 r){
   return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - r.x;
 }
 
+vec4 sampleGradient(float t)
+{
+    UIInstance instance = instances[inInstanceIndex];
+
+    if (inGradientStopCount == 0)
+        return inColor;
+
+    GradientStop first =
+        instance.gradientStops[0];
+
+    if (inGradientStopCount == 1 || t <= first.position)
+        return first.color;
+
+    for (uint i = 0;
+         i < inGradientStopCount - 1;
+         ++i)
+    {
+        GradientStop a = instance.gradientStops[i];
+        GradientStop b = instance.gradientStops[i + 1];
+
+        if (t >= a.position &&
+            t <= b.position)
+        {
+            float localT =
+                (t - a.position) /
+                (b.position - a.position);
+
+            return mix(
+                a.color,
+                b.color,
+                smoothstep(0.0, 1.0, localT)
+            );
+        }
+    }
+
+     GradientStop last =
+       instance.gradientStops[inGradientStopCount - 1];
+
+    return last.color;
+}
+
+vec4 computeGradient()
+{
+    if (inGradientType == GRADIENT_NONE)
+        return inColor;
+
+    float t = 0.0;
+
+    // ----------------------------
+    // Linear
+    // ----------------------------
+
+    if (inGradientType == GRADIENT_LINEAR)
+    {
+        vec2 dir = vec2(
+            cos(inGradientDirection),
+            sin(inGradientDirection)
+        );
+
+        vec2 centeredUV =
+            inUV - vec2(0.5);
+
+        t =
+            dot(centeredUV, dir)
+            + 0.5;
+    }
+
+    // ----------------------------
+    // Radial
+    // ----------------------------
+
+    else if (inGradientType == GRADIENT_RADIAL)
+    {
+      float dist;
+
+      // INFO: No confusion, inIsRadialUniform is int but grabbed from styleConfig as bool
+      if (inIsRadialUniform != 0) {
+        // 1. Calculate the aspect ratio of the rectangle (e.g., 2.0 if it's twice as wide as it is tall)
+        float aspectRatio = inSize.x / inSize.y;
+
+        // 2. Adjust the X coordinate of both the current position and the center by the aspect ratio
+        vec2 correctedUV     = vec2(inUV.x * aspectRatio, inUV.y);
+        vec2 correctedCenter = vec2(inGradientCenter.x * aspectRatio, inGradientCenter.y);
+
+        // 3. Calculate the true geometric distance in this un-distorted space
+        dist = distance(correctedUV, correctedCenter);
+
+      } else {
+        dist =
+             distance(
+                 inUV,
+                 inGradientCenter
+             );
+      }
+
+
+        t =
+            dist / inGradientRadius;
+    }
+
+    t = clamp(t, 0.0, 1.0);
+
+    return sampleGradient(t);
+}
+
 void main(){
+
+  // if (inClipRect.z > inClipRect.x) {
+  //     if (gl_FragCoord.x < inClipRect.x || gl_FragCoord.y < inClipRect.y || 
+  //         gl_FragCoord.x > inClipRect.z || gl_FragCoord.y > inClipRect.w) {
+  //         discard;
+  //     }
+  // }
+
   if (inShapeType == SHAPE_TEXT) {
     vec2 texCoord = mix(inUVMin, inUVMax, inUV);
-    
+
     float mask = texture(fontAtlas, texCoord).r;
-    
+
     if (mask < 0.01) discard;
-    
-    fColor = vec4(inColor.rgb, inColor.a * mask);
+
+    vec4 baseColor = computeGradient();
+
+    fColor = vec4(
+        baseColor.rgb,
+        baseColor.a * mask * inOpacity
+    );
+
     return;
   }
 
   if(inShapeType == SHAPE_IMAGE){
     vec2 texCoord = mix(inUVMin, inUVMax, inUV);
     vec4 texColor = texture(uiTexture[inTextureIndex], texCoord);
-    fColor = texColor;
+    fColor = vec4(texColor.rgb, texColor.a * inOpacity);
     return;
   }
 
@@ -67,29 +237,37 @@ void main(){
   }
 
   float fillAlpha = 1.0 - smoothstep(-1.0, 1.0, d);
-  vec4 fragColor = vec4(inColor.rgb, inColor.a * fillAlpha);
+
+  vec4 baseColor = computeGradient();
+
+  vec4 fragColor = vec4(
+      baseColor.rgb,
+      baseColor.a * fillAlpha
+  );
 
   if (inStrokeWidth > 0.0) {
     float startEdge, endEdge;
 
-    if (inStrokePos == 0) { 
+    if (inStrokePos == 0) {
       startEdge = -inStrokeWidth;
       endEdge = 0.0;
-    } else if (inStrokePos == 1) { 
+    } else if (inStrokePos == 1) {
       startEdge = -inStrokeWidth * 0.5;
       endEdge = inStrokeWidth * 0.5;
-    } else { 
+    } else {
       startEdge = 0.0;
       endEdge = inStrokeWidth;
     }
 
-    float strokeAlpha = smoothstep(-1.0, 1.0, d - startEdge) - smoothstep(-1.0, 1.0, d - endEdge);
+    float strokeAlpha =
+        smoothstep(-1.0, 1.0, d - startEdge) -
+        smoothstep(-1.0, 1.0, d - endEdge);
 
     if (inDotGap > 0.0) {
-      float s; 
+      float s;
 
       if (abs(p.x) * inSize.y > abs(p.y) * inSize.x) {
-        s = p.y; 
+        s = p.y;
       } else {
         s = p.x;
       }
@@ -98,8 +276,16 @@ void main(){
         strokeAlpha = 0.0;
       }
     }
-    fragColor = mix(fragColor, inStrokeColor, strokeAlpha * inStrokeColor.a);
+
+    fragColor = mix(
+        fragColor,
+        inStrokeColor,
+        strokeAlpha * inStrokeColor.a
+    );
   }
-  
-  fColor = fragColor;
+
+  fColor = vec4(
+      fragColor.rgb,
+      fragColor.a * inOpacity
+  );
 }

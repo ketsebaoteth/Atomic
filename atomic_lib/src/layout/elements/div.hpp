@@ -22,7 +22,7 @@ public:
   ~DivElement() override = default;
 
   ElementType GetType() const override { return ElementType::DIV; }
-  const ui::styleConfig &GetStyle() const override { return m_style; }
+  // const ui::styleConfig &GetStyle() const override { return m_style; }
   ui::styleConfig &GetStyle() override { return m_style; }
 
   const ui::LayoutAccumulation &GetLayoutMetrics() const override {

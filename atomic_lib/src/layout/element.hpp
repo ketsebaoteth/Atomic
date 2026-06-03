@@ -2,7 +2,7 @@
 #include "math/vec.hpp"
 #include "renderer/style.hpp"
 #include <memory>
-#include <variant>
+// #include <variant>
 #include <vector>
 
 namespace ui {
@@ -17,6 +17,8 @@ struct LayoutAccumulation {
   math::vec2<float> padding{0.0f, 0.0f};
   math::vec2<float> margin{0.0f, 0.0f};
   float flex_grow_weight{0.0f};
+
+  math::vec4<float> clip_rect{-10000.0f, -10000.0f, 100000.0f, 100000.0f};
 };
 
 class IElement {
@@ -24,7 +26,7 @@ public:
   virtual ~IElement() = default;
 
   virtual ElementType GetType() const = 0;
-  virtual const ui::styleConfig &GetStyle() const = 0;
+  // virtual const ui::styleConfig &GetStyle() const = 0;
   virtual ui::styleConfig &GetStyle() = 0;
 
   virtual const LayoutAccumulation &GetLayoutMetrics() const = 0;
